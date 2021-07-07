@@ -42,17 +42,53 @@ class DataUsage:
         """
         self.connection.close()
 
-    def insert_location(self, id_user:int, name_location:str, latitude:float, longitude:float) -> bool:
+    def get_user_values(self, id_user:int) -> bool:
+        """
+        Method which is dedicated to check the presence of the 
+        Input:  id_user = user id which is checked to this mission
+        Output: we successfully checked presence the use within the bot
+        """
+        try:
+            value_user = self.cursor.execute(f'SELECT id from {table_users} where id={id_user}').fetchone()
+            if value_user:
+                return True
+            return False
+        except Exception as e:
+            print(f'We found problems with checking values of the previous insertion, mistake: {e}')
+
+    def get_current_id(self) -> int:
+        """
+        Method which is dedicated to manually return values from the database manually
+        Input:  None
+        Output: we successfully returned last id of the coordinate
+        """
+        try:
+            return self.cursor.execute(f"SELECT MAX(id) FROM {table_locations};").fetchone()
+        except Exception as e:
+            print('We faced some problems with the getting last id value')
+            return -1
+
+    def insert_location(self, id_list:list, name_location:str, latitude:float, longitude:float) -> bool:
         """
         Method which is dedicated to insert location to the values
-        Input:  id_user = user which inserted location
+        Input:  id_list = list of the user values which inserted location
                 name_location = name of the location which we would add
                 latitude = latitude of the coordinates
                 longitude = longitude of the coordinates
         Output: we successfully inserted coordinates and 
         """
-        #TODO create values of the
-        pass
+        try:
+            #TODO create the insertion to the user if it is required
+            id_user, username, name_first, name_last = id_list
+            if not self.get_user_values(id_user):
+                self.insert_username(id_user, username, name_first, name_last)
+            self.cursor.execute(f"INSERT INTO {table_locations} (name_location, latitude, longitude) VALUES (?, ?, ?);", 
+                                (name_location, latitude, longitude))
+            self.cursor.execute(f"INSERT INTO {table_users_locations} (id_user, id_location) VALUES (?, ?);", (id_user, self.cursor.lastrowid))
+            return True
+        except Exception as e:
+            print(f'We faced problems with the performing of the operating of the location inserting. Mistake: {e}')
+            return False
 
     def insert_username(self, id_user:int, username:str, name_first:str, name_last:str) -> bool:
         """
@@ -64,7 +100,8 @@ class DataUsage:
         Output: we inserted username values
         """
         try:
-            self.cursor.execute(f"INSERT INTO {table_users}(id, name_first, name_last, nickname) VALUES ({id_user}, '{name_first}', '{name_last}', '{username}');")
+            self.cursor.execute(f"INSERT INTO {table_users}(id, name_first, name_last, nickname) VALUES (?, ?, ?, ?);", 
+                        (id_user, name_first, name_last, username))
             return True
         except Exception as e:
             print('We faced problem with inserting values within the database')
