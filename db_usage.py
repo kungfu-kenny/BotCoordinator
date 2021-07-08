@@ -56,6 +56,25 @@ class DataUsage:
         except Exception as e:
             print(f'We found problems with checking values of the previous insertion, mistake: {e}')
 
+    def get_group_values(self, group_id:int, group_name:str) -> bool:
+        """
+        Method which is dedicated to check the presence of selected group or update name in other cases
+        Input:  group_id = id of selected group
+                group_name = name of the selected group
+        Output: boolean value which shows presence of the 
+        """
+        try:
+            value_list = self.cursor.execute(f"SELECT id, name FROM {table_groups} WHERE id={group_id};").fetchone()
+            if not value_list:
+                return False
+            group_used_id, group_used_name = value_list
+            if group_used_name != group_name:
+                self.cursor.execute(f"UPDATE {table_groups} SET name={group_name} WHERE id={group_used_id};")
+            return True
+        except Exception as e:
+            print(f"We faced problems with checking of the group prensence. Mistake: {e}")
+            return False
+
     def get_current_id(self) -> int:
         """
         Method which is dedicated to manually return values from the database manually
@@ -78,7 +97,6 @@ class DataUsage:
         Output: we successfully inserted coordinates and 
         """
         try:
-            #TODO create the insertion to the user if it is required
             id_user, username, name_first, name_last = id_list
             if not self.get_user_values(id_user):
                 self.insert_username(id_user, username, name_first, name_last)
@@ -90,6 +108,81 @@ class DataUsage:
             print(f'We faced problems with the performing of the operating of the location inserting. Mistake: {e}')
             return False
 
+    def make_group_insertion(self, group_id:int, group_name:str) -> bool:
+        """
+        Method which is dedicated to make the group insertion
+        Input:  group_id = id of the selected values
+                group_name = name of the group
+        Output: we successfully created 
+        """
+        try:
+            self.cursor.execute(f"INSERT INTO {table_groups} (id, name) VALUES (?, ?);", (group_id, group_name))
+            return True
+        except Exception as e:
+            print(f"We faced problems with isertion of the groups. Mistake: {e}")
+            return False
+
+    def connect_user_group(self, id_group:int, id_user:int) -> bool:
+        """
+        Method which is dedicated to connect uer to the group
+        Input:  id_group = id of selected user
+                id_user = id of the telegram user
+        Output: we inserted to the foreign keys values
+        """
+        try:
+            self.cursor.execute(f"INSERT INTO {table_users_groups} (id_user, id_group) VALUES (?, ?);", (id_user, id_group))
+            return True
+        except Exception as e:
+            print(f'We have problems with the connection between user and group. Mistake: {e}')
+            return False
+
+    def disconnect_user_group(self, id_user, id_group) -> bool:
+        try:
+            self.cursor.execute(f"DELETE INTO {table_users_groups} WHERE id_user={id_user} AND id_group={id_group};")
+            return True
+        except Exception as e:
+            print(f'We have problems with the connection deletion between user and group. Mistake: {e}')
+            return False
+
+    def check_user_group_connection(self, id_group:int, id_user:int) -> bool:
+        """
+        Method which is dedicated to check that user has added group to the connection
+        Input:  id_group = id of the selected group
+                id_user = id of the selected user
+        Output: boolean value that signifies that we have successfully 
+        """
+        try:
+            value_list = self.cursor.execute(f"SELECT * FROM {table_users_groups} WHERE id_group={id_group} AND id_user={id_user};").fetchone()
+            if value_list:
+                return True
+            return False
+        except Exception as e:
+            print(f"We have problem with getting values from the {table_users_groups}. Mistake: {e}")
+            return False
+
+    def insert_group(self, group_id:int, group_name:str, id_user:int, username:str, name_first:str, name_last:str) -> bool:
+        """
+        Method which is dedicated to insert group which was inserted to the 
+        Input:  group_id = id of the group which was inserted
+                group_name = name of the group
+                id_user = user id values
+                username = username of the telegram
+                name_first = first name of the telegram user
+                name_last = last name of the telegram user
+        Output: we successfully inserted values of the group
+        """
+        try:
+            if not self.get_user_values(id_user):
+                self.insert_username(id_user, username, name_first, name_last)
+            if not self.get_group_values(group_id, group_name):
+                self.make_group_insertion(group_id, group_name)
+            if not self.check_user_group_connection(group_id, id_user):
+                self.connect_user_group(group_id, id_user)
+            return True
+        except Exception as e:
+            print(f"We faced problem with inserting the group. Mistake: {e}")
+            return False
+            
     def insert_username(self, id_user:int, username:str, name_first:str, name_last:str) -> bool:
         """
         Method which is dedicated to insert username to the 
