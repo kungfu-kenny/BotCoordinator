@@ -1,38 +1,71 @@
 import telebot
 from telebot.types import ReplyKeyboardMarkup, InlineKeyboardMarkup
-from config import bot_key
+from telegram_bot import bot
+from db_usage import DataUsage
+from telegram_manager import TelegramManager
+from config import (separator,
+                    button_help, 
+                    button_update,
+                    button_groups,
+                    button_support,
+                    button_settings,
+                    button_locations,
+                    entrance_values)
 
-
-bot = telebot.TeleBot(bot_key)
-
-# @bot.message_handler(content_types=["text"])
-# def send_test_message_check(message):
-#     print(message)
-#     bot.send_message(message.chat.id, 'Hi')
+    
+data_usage = DataUsage()
+telegram_manager = TelegramManager()
+markup_test = telegram_manager.return_reply_keyboard()
 
 @bot.message_handler(content_types=['location'])
 def check_coordinates(message):
-    print(message)
-    #TODO add keyboard of save, edit, delete
+    telegram_manager.produce_necessary_update(data_usage)
+    #TODO add keyboard of save, edit, delete, rename values
+    keyboard_locations_choice = telebot.types.InlineKeyboardMarkup()
+    keyboard_locations_choice.row(telebot.types.InlineKeyboardButton('Analyse Tags', callback_data=112))
+    if data_usage.check_presence_locations(message.chat.id):
+        keyboard_locations_choice.row(telebot.types.InlineKeyboardButton('Update Tags', callback_data=114),
+                telebot.types.InlineKeyboardButton('Remove Tags', callback_data=111))
+    
+    bot.reply_to(message, 'Select command what to do with a location:', reply_markup=keyboard_locations_choice)
     print('################################################')
-    bot.send_message(message.chat.id, '222')
 
-@bot.message_handler(func=lambda call: True)
-def start_message(query):
-    print(query)
-    print('#####################################4444')
-    markup = ReplyKeyboardMarkup(one_time_keyboard=True)
-    markup.add('1', '2')
-    bot.register_next_step_handler(query, process_step)
+@bot.message_handler(commands=['start'])
+def start_messages(message):
+    telegram_manager.produce_necessary_update(data_usage)
+    markup_test = telegram_manager.return_reply_keyboard()
+    bot.send_message(message.from_user.id, entrance_values, reply_markup=markup_test)
 
-def process_step(query):
-    chat_id = query.from_user.id
-    print(query)
-    print('####################################2#')
-    if query.text=='1':
-        bot.send_message(chat_id, 'Hi')
-    else:
-        bot.send_message(chat_id, 'Bye')
+# @bot.message_handler(func=lambda call: True)
+# def start_message(message):
+#     telegram_manager.produce_necessary_update(data_usage)
+#     bot.send_message(message.chat.id, 'test')
+
+@bot.message_handler(content_types=["text"])
+def send_test_message_check(message):
+    telegram_manager.produce_necessary_update(data_usage)
+    if message.text == button_update:
+        value_msg = bot.send_message(message.from_user.id, 'TEST3')
+        # bot.delete_message(message.chat.id, message.message_id)
+        # delete_message(message.chat.id, .message_id)
+    elif message.text == button_settings:
+        value_msg = bot.send_message(message.from_user.id, 'TEST4')
+    if message.text == button_help:
+        value_msg = bot.send_message(message.from_user.id, 'TEST5')
+
+    # print(query)
+    # print('#####################################4444')
+    # data_usage.check_db()
+    # print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+    # markup_default.add(button_help)
+    
+    # bot.register_next_step_handler(query, process_step)
+    # markup_test = ReplyKeyboardMarkup(True, True, row_width=1)
+    # markup_test.row('5', '6')
+    # markup_test.row('4', '7')
+    # bot.send_message(message.from_user.id, "Yeezus2", reply_markup=markup_test)
+
 
 if __name__ == '__main__':
     bot.polling()
+    data_usage.close_connection()

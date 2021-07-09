@@ -15,3 +15,12 @@ table_locations = 'locations'
 table_groups = 'groups'
 table_users_locations = 'users_locations'
 table_users_groups = 'users_groups'
+
+button_update = 'Update'
+button_help = 'Help'
+button_settings = 'Settings'
+button_support = "Support"
+button_locations = 'Locations'
+button_groups = 'Groups'
+
+entrance_values = "Welcome to the Group Management"
