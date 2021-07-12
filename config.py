@@ -23,4 +23,10 @@ button_support = "Support"
 button_locations = 'Locations'
 button_groups = 'Groups'
 
+button_location_add = "Add location"
+button_location_send = "Resend location"
+
 entrance_values = "Welcome to the Group Management"
+entrance_bot_usage = "Nico, let's go bowling"
+entrance_bot_img_name = 'roman.jpg'
+entrance_bot_img_link = os.getenv('IMG_ROMAN')

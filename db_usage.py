@@ -72,7 +72,7 @@ class DataUsage:
         """
         Method which is dedicated to check presence of the locations in the
         Input:  id_user = id to check values
-        Output: booelan which signifies diffeerence btween the menus
+        Output: booelan which signifies presence location for user
         """
         try:
             value_list = self.cursor.execute(f"SELECT * FROM {table_users_locations} where id_user={id_user};").fetchone()
@@ -82,7 +82,23 @@ class DataUsage:
                 return True
             return False
         except Exception as e:
-            msg = f"We faced problems with checking the locations"
+            msg = f"We faced problems with checking the locations. Error: {e}"
+            self.proceed_error(msg)
+            return False
+
+    def check_presence_groups(self, id_user:int) -> bool:
+        """
+        Method which is dedicated to check presence of selected group by user
+        Input:  id_user = id to check values
+        Output: boolean value which signifies presence groups for user
+        """
+        try:
+            value_list = self.cursor.execute(f"SELECT * FROM {table_users_groups} where id_user={id_user};").fetchone()
+            if value_list:
+                return True
+            return False
+        except Exception as e:
+            msg = f"We faced problems with checking the groups for users. Error: {e}"
             self.proceed_error(msg)
             return False
 
