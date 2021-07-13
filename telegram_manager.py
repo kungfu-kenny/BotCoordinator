@@ -6,6 +6,12 @@ from telebot.types import ReplyKeyboardMarkup
 from telegram_bot import bot
 from config import (bot_key, 
                     separator, 
+                    callback_sep_upd,
+                    callback_sep_hel,
+                    callback_sep_gro,
+                    callback_sep_loc,
+                    callback_sep_set,
+                    callback_sep_sup,
                     button_help, 
                     button_update,
                     button_groups,
@@ -72,6 +78,17 @@ class TelegramManager:
         value_parsed = [v.split(separator) for v in list(set(value_parsed))]
         value_parsed = [[int(v[0]), v[1], int(v[2]), v[3], v[4], v[5]] for v in value_parsed]
         return value_parsed
+
+    def manage_callback_data(self, value_string:str) -> set:
+        """
+        Method which is dedicated to manage all posible callback data to the function
+        Input:  value_string = string which is sent to the 
+        Output: set with sent values which is required
+        """
+        if callback_sep_sup in value_string:
+            return ()
+        if callback_sep_hel in value_string:
+            return ()
 
 
 if __name__ == '__main__':

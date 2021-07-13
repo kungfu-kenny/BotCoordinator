@@ -1,5 +1,8 @@
 import telebot
-from telebot.types import ReplyKeyboardMarkup, InlineKeyboardMarkup
+from telebot.types import (ReplyKeyboardMarkup, 
+                            InlineKeyboardMarkup, 
+                            InputTextMessageContent,
+                            InlineQueryResultArticle)
 from telegram_bot import bot
 from db_usage import DataUsage
 from user_profiler import UserProfiler
@@ -27,6 +30,7 @@ def check_coordinates(message):
     telegram_manager.produce_necessary_update(data_usage)
     #TODO add keyboard of save, edit, delete, rename values
     keyboard_locations_choice = telebot.types.InlineKeyboardMarkup()
+    callback_add = 1
     keyboard_locations_choice.row(telebot.types.InlineKeyboardButton(button_location_add, callback_data=112))
     if data_usage.check_presence_groups(message.chat.id):
         keyboard_locations_choice.row(telebot.types.InlineKeyboardButton(button_location_send, callback_data=115))
@@ -51,7 +55,14 @@ def calculate_answer_on_the_buttons(query):
     data = query.data
     data_user = query.from_user.id
     print(data_user)
+    print(query)
     print('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
+    # try:
+    #     r1 = InlineQueryResultArticle('1', 'Result1', InputTextMessageContent('hi'))
+    #     r2 = InlineQueryResultArticle('2', 'Result2', InputTextMessageContent('hi'))
+    #     bot.answer_inline_query(query.id, [r1, r2])
+    # except Exception as e:
+    #     print(e)
 
 @bot.message_handler(content_types=["text"])
 def send_test_message_check(message):
@@ -64,6 +75,9 @@ def send_test_message_check(message):
         value_msg = bot.send_message(message.from_user.id, 'TEST4')
     if message.text == button_help:
         value_msg = bot.send_message(message.from_user.id, 'TEST5')
+    # r1 = InlineQueryResultArticle('1', 'Result1', InputTextMessageContent('hi'))
+    # r2 = InlineQueryResultArticle('2', 'Result2', InputTextMessageContent('hi'))
+    # bot.answer_inline_query(message.from_user.id, [r1, r2])
 
     # print(query)
     # print('#####################################4444')

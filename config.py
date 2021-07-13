@@ -16,12 +16,22 @@ table_groups = 'groups'
 table_users_locations = 'users_locations'
 table_users_groups = 'users_groups'
 
-button_update = 'Update'
-button_help = 'Help'
-button_settings = 'Settings'
-button_support = "Support"
-button_locations = 'Locations'
-button_groups = 'Groups'
+callback_sep_upd = "🔄"
+callback_sep_hel = "❔"
+callback_sep_set = "⚙️"
+callback_sep_sup = "💰" 
+callback_sep_loc = "🌐"
+callback_sep_gro = "🎻"
+
+callback_sep_addloc = "⚽️"
+callback_sep_senloc = "🏀"
+
+button_update = 'Update 🔄'
+button_help = 'Help ❔'
+button_settings = 'Settings ⚙️'
+button_support = "Support 💰"
+button_locations = 'Locations 🌐'
+button_groups = 'Groups 🎻'
 
 button_location_add = "Add location"
 button_location_send = "Resend location"
