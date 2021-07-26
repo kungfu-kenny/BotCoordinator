@@ -17,7 +17,9 @@ from config import (separator,
                     button_location_add,
                     button_location_send,
                     entrance_bot_usage,
-                    entrance_values)
+                    entrance_values,
+                    command_name_location_add,
+                    command_name_location_edit)
 
     
 data_usage = DataUsage()
@@ -49,6 +51,36 @@ def start_messages(message):
     if link_image:
         with open(link_image, 'rb') as instance_img:
             bot.send_photo(message.from_user.id, instance_img, caption=entrance_bot_usage, reply_markup=markup_test)
+
+@bot.message_handler(commands=[command_name_location_add])
+def add_location_name(message):
+    if message.reply_to_message and message.reply_to_message.content_type != "location":
+        bot.reply_to(message, 'You have replied your message not to the location, please correct that mistake')
+        return
+    elif not message.reply_to_message:
+        bot.reply_to(message, "You need to reply this message to youre coordinate which you have sent")
+        return    
+    value_coordinates, value_limit = data_usage.get_user_coordinates(message.chat.id)
+    if not value_limit:
+        bot.reply_to(message, "You have surpassed the limit of the values")
+        return
+    value_name, value_check = telegram_manager.manage_added_name(message.text)
+    if not value_check:
+        bot.reply_to(message, "Unfortunatelly, you pressed the wrong values to this values")
+        return
+    
+    value_name = telegram_manager.produce_name_added(value_name, value_coordinates)
+    value_latitude = message.reply_to_message.location.latitude
+    value_longitude = message.reply_to_message.location.longitude
+    data_usage.insert_location([message.from_user.id, message.from_user.username, message.from_user.first_name, 
+                                message.from_user.last_name], value_name, value_latitude, value_longitude)
+
+@bot.message_handler(commands=[command_name_location_edit])
+def change_location_name_message(message):
+    """
+    Method which is dedicated to work with updating the names
+    """
+    pass
 
 @bot.callback_query_handler(func=lambda call: True)
 def calculate_answer_on_the_buttons(query):

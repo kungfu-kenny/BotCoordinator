@@ -4,6 +4,7 @@ from sqlite3.dbapi2 import Connection
 import sqlite3
 from telegram_manager import TelegramManager
 from config import (name_db,
+                    value_limit,
                     folder_config,
                     table_users,
                     table_groups,
@@ -76,8 +77,6 @@ class DataUsage:
         """
         try:
             value_list = self.cursor.execute(f"SELECT * FROM {table_users_locations} where id_user={id_user};").fetchone()
-            print(value_list)
-            print('--------------------------------------')
             if value_list:
                 return True
             return False
@@ -276,6 +275,26 @@ class DataUsage:
             msg = 'We faced problem with inserting values within the database'
             self.proceed_error(msg)
             return False
+
+    def get_user_coordinates(self, id:int) -> set:
+        """
+        Method which is dedicated to produce the user coordinates of the 
+        Input:  id = id of the user which is required to find them
+        Output: list with the strings of coordinate names of the user, boolean with signifies maximum capacity
+        """
+        try:
+            list_id = self.cursor.execute(f"SELECT id_location FROM {table_users_locations} WHERE id_user={id};").fetchall()
+            if not list_id:
+                return [], True
+            value_str = ','.join(list_id)
+            value_list = self.cursor.execute(f"SELECT name_location from {table_locations} WHERE id_user IN ({value_str});").fetchall()
+            print(value_list)
+            return value_list, len(value_list) < value_limit
+        except Exception as e:
+            msg = f"We have problems with getting coordinates for the users. Mistake: {e}"
+            self.proceed_error(msg)
+            print('=================================================')
+            return [], False
 
     def produce_values(self) -> None:
         """

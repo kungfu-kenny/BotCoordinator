@@ -18,7 +18,9 @@ from config import (bot_key,
                     button_support,
                     button_settings,
                     button_locations,
-                    chat_id_default)
+                    chat_id_default,
+                    command_name_location_add,
+                    command_name_location_edit)
 
 class TelegramManager:
     """
@@ -89,6 +91,32 @@ class TelegramManager:
             return ()
         if callback_sep_hel in value_string:
             return ()
+
+    @staticmethod
+    def manage_added_name(value_string:str) -> set:
+        """
+        Method which is dedicated to check that it has been added name 
+        Input:  value_string = string which user has been inserted
+        Output: set with values of the string name, boolean of everything is okay
+        """
+        #TODO firstly, create the name
+        value_name, value_command = '', f"/{command_name_location_add}"
+        value_bool = value_command in value_string and value_string[:len(value_command)] == value_command and bool(value_string[len(value_command):])
+        if value_bool:
+            value_name = value_string[len(value_command) + 1:]
+            value_name = value_name.strip()
+        return value_name, value_bool
+
+    def produce_name_added(self, value_string:str, value_list:list) -> str:
+        """
+        Method which is dedicated to produce the values of the 
+        Input:  value_string = string values of the 
+                value_list = list of the selected values of the user locations
+        Output: string which is used by this user
+        """
+        if not value_string in value_list:
+            return value_string
+        return self.produce_name_added(f"{value_string}(1)", value_list)
 
 
 if __name__ == '__main__':

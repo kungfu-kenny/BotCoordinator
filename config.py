@@ -40,3 +40,8 @@ entrance_values = "Welcome to the Group Management"
 entrance_bot_usage = "Nico, let's go bowling"
 entrance_bot_img_name = 'roman.jpg'
 entrance_bot_img_link = os.getenv('IMG_ROMAN')
+
+command_name_location_add = 'add_location_name'
+command_name_location_edit = 'edit_location_name'
+
+value_limit = 10
