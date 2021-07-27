@@ -27,8 +27,10 @@ user_profiler = UserProfiler()
 telegram_manager = TelegramManager()
 markup_test = telegram_manager.return_reply_keyboard()
 
-@bot.message_handler(content_types=['location'])
+@bot.message_handler(content_types=['location', 'venue'])
 def check_coordinates(message):
+    print(message)
+    print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
     telegram_manager.produce_necessary_update(data_usage)
     #TODO add keyboard of save, edit, delete, rename values
     keyboard_locations_choice = telebot.types.InlineKeyboardMarkup()
@@ -42,6 +44,12 @@ def check_coordinates(message):
     
     bot.reply_to(message, 'Select command what to do with a location:', reply_markup=keyboard_locations_choice)
     print('################################################')
+
+@bot.message_handler(content_types=['test'])
+def test(message):
+    print(message)
+    print('###########################################################')
+
 
 @bot.message_handler(commands=['start'])
 def start_messages(message):
@@ -74,12 +82,15 @@ def add_location_name(message):
     value_longitude = message.reply_to_message.location.longitude
     data_usage.insert_location([message.from_user.id, message.from_user.username, message.from_user.first_name, 
                                 message.from_user.last_name], value_name, value_latitude, value_longitude)
+    bot.send_message(message.chat.id, f"We successfully added location with name '{value_name}'")
 
 @bot.message_handler(commands=[command_name_location_edit])
 def change_location_name_message(message):
     """
-    Method which is dedicated to work with updating the names
+    Method which is dedicated to work with updating the names of the 
     """
+    #TODO make the functions of checkings, make values check of the strings
+    #TODO make the check these values in the database
     pass
 
 @bot.callback_query_handler(func=lambda call: True)
@@ -87,8 +98,21 @@ def calculate_answer_on_the_buttons(query):
     data = query.data
     data_user = query.from_user.id
     print(data_user)
-    print(query)
-    print('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
+    print(data)
+    # print(query.message.reply_to_message)
+    # print(10000000000000000000000000000000000000000000000000000000000000000000)
+    if data == '112' and query.message.reply_to_message.venue:
+        # print(query.message.reply_to_message)
+        new_name = '|'.join([query.message.reply_to_message.venue.title, query.message.reply_to_message.venue.address])
+        new_longtitude = query.message.reply_to_message.venue.location.longitude
+        new_latitude = query.message.reply_to_message.venue.location.latitude
+        new_chat_id = query.message.chat.id
+        new_chat_name_first = query.message.chat.first_name
+        new_chat_name_last = query.message.chat.last_name
+        new_chat_name_user = query.message.chat.username
+        print(new_name, new_longtitude, new_latitude)
+        print(new_chat_id, new_chat_name_first, new_chat_name_last, new_chat_name_user)
+
     # try:
     #     r1 = InlineQueryResultArticle('1', 'Result1', InputTextMessageContent('hi'))
     #     r2 = InlineQueryResultArticle('2', 'Result2', InputTextMessageContent('hi'))
@@ -96,8 +120,11 @@ def calculate_answer_on_the_buttons(query):
     # except Exception as e:
     #     print(e)
 
+    
 @bot.message_handler(content_types=["text"])
 def send_test_message_check(message):
+    # print(message.reply_to_message)
+    # print('88888888888888888888888888888888888888888888888888888888888888888')
     telegram_manager.produce_necessary_update(data_usage)
     if message.text == button_update:
         value_msg = bot.send_message(message.from_user.id, 'TEST3')

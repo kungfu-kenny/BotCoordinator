@@ -286,10 +286,9 @@ class DataUsage:
             list_id = self.cursor.execute(f"SELECT id_location FROM {table_users_locations} WHERE id_user={id};").fetchall()
             if not list_id:
                 return [], True
-            value_str = ','.join(list_id)
-            value_list = self.cursor.execute(f"SELECT name_location from {table_locations} WHERE id_user IN ({value_str});").fetchall()
-            print(value_list)
-            return value_list, len(value_list) < value_limit
+            value_str = ','.join([str(l[0]) for l in list_id])
+            value_list = self.cursor.execute(f"SELECT name_location from {table_locations} WHERE id IN ({value_str});").fetchall()
+            return [f[0] for f in value_list], len(value_list) < value_limit
         except Exception as e:
             msg = f"We have problems with getting coordinates for the users. Mistake: {e}"
             self.proceed_error(msg)

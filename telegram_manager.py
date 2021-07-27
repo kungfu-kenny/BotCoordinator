@@ -100,12 +100,41 @@ class TelegramManager:
         Output: set with values of the string name, boolean of everything is okay
         """
         #TODO firstly, create the name
+        value_string = value_string.strip()
         value_name, value_command = '', f"/{command_name_location_add}"
         value_bool = value_command in value_string and value_string[:len(value_command)] == value_command and bool(value_string[len(value_command):])
         if value_bool:
             value_name = value_string[len(value_command) + 1:]
-            value_name = value_name.strip()
+            value_name = value_name.strip()#.replace(':', '').replace(',', '')
         return value_name, value_bool
+
+    @staticmethod
+    def manage_updated_name(value_string:str) -> set:
+        """
+        Method which is dedicated to check the updated string for all of that
+        Input:  value_string = string which user has been inserted to update
+        Output: set with values of 
+        """
+        #TODO add additional checking on all of this
+        value_name_old, value_name_new, value_command, value_bool_comm = [], [], f"/{command_name_location_edit}", False
+        value_bool = value_command in value_string and value_string[:len(value_command)] == value_command and bool(value_string[len(value_command):])
+        if value_bool:
+            value_list_used = []
+            value_list_bool = []
+            value_names = value_string[len(value_command) + 1:]
+            for value_phrase in value_names.split(','):
+                if value_phrase:
+                    value_list_check = value_phrase.split(':')
+                    value_list_bool.append(len(value_list_check == 2))
+                    value_list_used.extend(value_list_check)
+            value_bool_comm = all(value_list_bool)
+        if value_bool_comm:
+            for index, value_name in enumerate(value_list_used):
+                if index + 1 % 2 == 0:
+                    value_name_new.append(value_name)
+                else:
+                    value_name_old.append(value_name)
+        return value_name_new, value_name_old, value_bool, value_bool_comm
 
     def produce_name_added(self, value_string:str, value_list:list) -> str:
         """
