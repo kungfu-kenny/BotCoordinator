@@ -15,9 +15,15 @@ from config import (separator,
                     button_settings,
                     button_locations,
                     button_location_add,
+                    button_group_mine,
+                    button_group_search,
                     button_location_send,
                     entrance_bot_usage,
                     entrance_values,
+                    callback_sep_addloc,
+                    callback_sep_group_mine,
+                    callback_sep_group_search,
+                    command_name_start,
                     command_name_location_add,
                     command_name_location_edit)
 
@@ -27,23 +33,25 @@ user_profiler = UserProfiler()
 telegram_manager = TelegramManager()
 markup_test = telegram_manager.return_reply_keyboard()
 
+def produce_groups(message):
+    keyboard_group_choice = telebot.types.InlineKeyboardMarkup()
+    keyboard_group_choice.row(telebot.types.InlineKeyboardButton(button_group_search, callback_data=callback_sep_group_search))
+    if data_usage.check_presence_groups(message.chat.id):
+        keyboard_group_choice.row(telebot.types.InlineKeyboardButton(button_group_mine, callback_data=callback_sep_group_mine))
+    bot.reply_to(message, 'Select what to do with groups:', reply_markup=keyboard_group_choice)
+
 @bot.message_handler(content_types=['location', 'venue'])
 def check_coordinates(message):
-    print(message)
-    print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
     telegram_manager.produce_necessary_update(data_usage)
     #TODO add keyboard of save, edit, delete, rename values
     keyboard_locations_choice = telebot.types.InlineKeyboardMarkup()
-    callback_add = 1
-    keyboard_locations_choice.row(telebot.types.InlineKeyboardButton(button_location_add, callback_data=112))
+    keyboard_locations_choice.row(telebot.types.InlineKeyboardButton(button_location_add, callback_data=callback_sep_addloc))
     if data_usage.check_presence_groups(message.chat.id):
         keyboard_locations_choice.row(telebot.types.InlineKeyboardButton(button_location_send, callback_data=115))
     if data_usage.check_presence_locations(message.chat.id):
         keyboard_locations_choice.row(telebot.types.InlineKeyboardButton('Update Tags', callback_data=114),
                 telebot.types.InlineKeyboardButton('Remove Tags', callback_data=111))
-    
     bot.reply_to(message, 'Select command what to do with a location:', reply_markup=keyboard_locations_choice)
-    print('################################################')
 
 @bot.message_handler(content_types=['test'])
 def test(message):
@@ -51,7 +59,7 @@ def test(message):
     print('###########################################################')
 
 
-@bot.message_handler(commands=['start'])
+@bot.message_handler(commands=[command_name_start])
 def start_messages(message):
     telegram_manager.produce_necessary_update(data_usage)
     markup_test = telegram_manager.return_reply_keyboard()
@@ -82,7 +90,7 @@ def add_location_name(message):
     value_longitude = message.reply_to_message.location.longitude
     data_usage.insert_location([message.from_user.id, message.from_user.username, message.from_user.first_name, 
                                 message.from_user.last_name], value_name, value_latitude, value_longitude)
-    bot.send_message(message.chat.id, f"We successfully added location with name '{value_name}'")
+    bot.send_message(message.chat.id, f"We successfully added location with name:\n '{value_name}'")
 
 @bot.message_handler(commands=[command_name_location_edit])
 def change_location_name_message(message):
@@ -96,35 +104,50 @@ def change_location_name_message(message):
 @bot.callback_query_handler(func=lambda call: True)
 def calculate_answer_on_the_buttons(query):
     data = query.data
-    data_user = query.from_user.id
-    print(data_user)
-    print(data)
-    # print(query.message.reply_to_message)
-    # print(10000000000000000000000000000000000000000000000000000000000000000000)
-    if data == '112' and query.message.reply_to_message.venue:
-        # print(query.message.reply_to_message)
+    if data == callback_sep_addloc and query.message.reply_to_message.venue:
         new_name = '|'.join([query.message.reply_to_message.venue.title, query.message.reply_to_message.venue.address])
-        new_longtitude = query.message.reply_to_message.venue.location.longitude
+        new_longitude = query.message.reply_to_message.venue.location.longitude
         new_latitude = query.message.reply_to_message.venue.location.latitude
         new_chat_id = query.message.chat.id
         new_chat_name_first = query.message.chat.first_name
         new_chat_name_last = query.message.chat.last_name
         new_chat_name_user = query.message.chat.username
-        print(new_name, new_longtitude, new_latitude)
-        print(new_chat_id, new_chat_name_first, new_chat_name_last, new_chat_name_user)
+        data_usage.insert_location([new_chat_id, new_chat_name_user, new_chat_name_first, 
+                                new_chat_name_last], new_name, new_latitude, new_longitude)
+        bot.send_message(new_chat_id, f"We successfully added location with name:\n '{new_name}'")
+        return 
 
-    # try:
-    #     r1 = InlineQueryResultArticle('1', 'Result1', InputTextMessageContent('hi'))
-    #     r2 = InlineQueryResultArticle('2', 'Result2', InputTextMessageContent('hi'))
-    #     bot.answer_inline_query(query.id, [r1, r2])
-    # except Exception as e:
-    #     print(e)
+    if data == callback_sep_addloc and not query.message.reply_to_message.venue and query.message.reply_to_message.location:
+        new_latitude = query.message.reply_to_message.location.latitude
+        new_longitude = query.message.reply_to_message.location.longitude
+        new_chat_id = query.message.chat.id
+        new_chat_name_first = query.message.chat.first_name
+        new_chat_name_last = query.message.chat.last_name
+        new_chat_name_user = query.message.chat.username
+        
+        a = False
+        if a: #TODO we add new table in the database
+            message_print = "Unfortunatelly, u didn't added default name feature, so u need to type the name with a command: "+\
+                            f"/{command_name_location_add}: <name which you have selected>\n" +\
+                            "Also, u can just include the autoname injection"
+            bot.send_message(new_chat_id, message_print)
+        else:
+            new_name = 'Name Default' #TODO change values
+            data_usage.insert_location([new_chat_id, new_chat_name_user, new_chat_name_first, 
+                                    new_chat_name_last], new_name, new_latitude, new_longitude)
+            bot.send_message(new_chat_id, f"We successfully added location with name:\n '{new_name}'")
+        return
+    
+    if data == callback_sep_group_mine:
+        print('Here ')
+        return
 
+    if data == callback_sep_group_search:
+        print('Think ')
+        return
     
 @bot.message_handler(content_types=["text"])
 def send_test_message_check(message):
-    # print(message.reply_to_message)
-    # print('88888888888888888888888888888888888888888888888888888888888888888')
     telegram_manager.produce_necessary_update(data_usage)
     if message.text == button_update:
         value_msg = bot.send_message(message.from_user.id, 'TEST3')
@@ -134,6 +157,11 @@ def send_test_message_check(message):
         value_msg = bot.send_message(message.from_user.id, 'TEST4')
     if message.text == button_help:
         value_msg = bot.send_message(message.from_user.id, 'TEST5')
+    if message.text == button_groups:
+        produce_groups(message)
+        # bot.delete_message(message.chat.id, message.message_id)
+    
+        
     # r1 = InlineQueryResultArticle('1', 'Result1', InputTextMessageContent('hi'))
     # r2 = InlineQueryResultArticle('2', 'Result2', InputTextMessageContent('hi'))
     # bot.answer_inline_query(message.from_user.id, [r1, r2])

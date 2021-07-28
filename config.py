@@ -23,8 +23,11 @@ callback_sep_sup = "💰"
 callback_sep_loc = "🌐"
 callback_sep_gro = "🎻"
 
-callback_sep_addloc = "⚽️"
-callback_sep_senloc = "🏀"
+callback_sep_addloc = "111"
+callback_sep_senloc = "112"
+
+callback_sep_group_search = "221"
+callback_sep_group_mine = "222"
 
 button_update = 'Update 🔄'
 button_help = 'Help ❔'
@@ -36,11 +39,15 @@ button_groups = 'Groups 🎻'
 button_location_add = "Add location"
 button_location_send = "Resend location"
 
+button_group_search = "Search Groups"
+button_group_mine = 'My groups'
+
 entrance_values = "Welcome to the Group Management"
 entrance_bot_usage = "Nico, let's go bowling"
 entrance_bot_img_name = 'roman.jpg'
 entrance_bot_img_link = os.getenv('IMG_ROMAN')
 
+command_name_start = 'start'
 command_name_location_add = 'add_location_name'
 command_name_location_edit = 'edit_location_name'
 
