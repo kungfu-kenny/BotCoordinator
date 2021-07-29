@@ -29,6 +29,11 @@ callback_sep_senloc = "112"
 callback_sep_group_search = "221"
 callback_sep_group_mine = "222"
 
+button_groups_mine_del = '❌'
+button_groups_mine_prev = '⬅️'
+button_groups_mine_next = '➡️'
+button_group_mine_text = 'All added groups:'
+
 button_update = 'Update 🔄'
 button_help = 'Help ❔'
 button_settings = 'Settings ⚙️'

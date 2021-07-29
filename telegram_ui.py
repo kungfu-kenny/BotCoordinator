@@ -18,6 +18,10 @@ from config import (separator,
                     button_group_mine,
                     button_group_search,
                     button_location_send,
+                    button_groups_mine_del,
+                    button_group_mine_text,
+                    button_groups_mine_prev,
+                    button_groups_mine_next,
                     entrance_bot_usage,
                     entrance_values,
                     callback_sep_addloc,
@@ -40,6 +44,48 @@ def produce_groups(message):
         keyboard_group_choice.row(telebot.types.InlineKeyboardButton(button_group_mine, callback_data=callback_sep_group_mine))
     bot.reply_to(message, 'Select what to do with groups:', reply_markup=keyboard_group_choice)
 
+#TODO make callback for the change
+def produce_reply_groups(message:object, value_list:list, value_index:int) -> None:
+    """
+    Function test which is dedicated to make the list of selected by users groups
+    Input:  message = selected message which is dedicated 
+            value_list = list of lists with the groups which is 
+            value_index = index of this list which is sent to the values
+    Output: sent input keyboard with this values
+    """
+    print(message)
+    print('777777777777777777777777777777777777777777777777777777777777777777')
+    keyboard_group_reply = telebot.types.InlineKeyboardMarkup()
+    button_group_middle = f'{value_index+1}/{len(value_list)}'
+    for i in value_list[value_index]:
+        keyboard_group_reply.row(telebot.types.InlineKeyboardButton(i, callback_data='1'), 
+                                telebot.types.InlineKeyboardButton(button_groups_mine_del, callback_data='12'))
+    keyboard_group_reply.row(telebot.types.InlineKeyboardButton(button_groups_mine_prev, callback_data='12'), 
+                            telebot.types.InlineKeyboardButton(button_group_middle, callback_data='1'),
+                            telebot.types.InlineKeyboardButton(button_groups_mine_next, callback_data='13'))
+    bot.reply_to(message, button_group_mine_text, reply_markup=keyboard_group_reply)
+
+def produce_reply_group_edit(message:object, value_list:list, value_index:int) -> None:
+    """
+    Function which is dedicated to make edit of the reply groups and 
+    Input:  message = object of the message in the telegram
+            value_list = list with the groups for the users
+            value_index = index with the new values
+    Output: we edited values of the 
+    """
+    print(message)
+    print('8888888888888888888888888888888888888888888888888888888888888888888888')
+    # value_index = value_index if value_index >= 0 else len(value_list) + value_index
+    keyboard_group_edit = telebot.types.InlineKeyboardMarkup()
+    button_group_middle = f'{value_index+1}/{len(value_list)}'
+    for i in value_list[value_index]:
+        keyboard_group_edit.row(telebot.types.InlineKeyboardButton(i, callback_data='1'), 
+                                telebot.types.InlineKeyboardButton(button_groups_mine_del, callback_data='12'))
+    keyboard_group_edit.row(telebot.types.InlineKeyboardButton(button_groups_mine_prev, callback_data='12'), 
+                            telebot.types.InlineKeyboardButton(button_group_middle, callback_data='1'),
+                            telebot.types.InlineKeyboardButton(button_groups_mine_next, callback_data='13'))
+    bot.edit_message_reply_markup(message, button_group_mine_text, reply_markup=keyboard_group_edit)
+
 @bot.message_handler(content_types=['location', 'venue'])
 def check_coordinates(message):
     telegram_manager.produce_necessary_update(data_usage)
@@ -57,7 +103,6 @@ def check_coordinates(message):
 def test(message):
     print(message)
     print('###########################################################')
-
 
 @bot.message_handler(commands=[command_name_start])
 def start_messages(message):
@@ -140,12 +185,17 @@ def calculate_answer_on_the_buttons(query):
     
     if data == callback_sep_group_mine:
         print('Here ')
+        print('==========================================================')
+        value_test = [['1', '2'], ['3', '4']] #TODO make values on the usage
+        produce_reply_groups(query.message, value_test, 0)
         return
 
     if data == callback_sep_group_search:
         print('Think ')
         return
     
+    #TODO make values for the updating this values
+
 @bot.message_handler(content_types=["text"])
 def send_test_message_check(message):
     telegram_manager.produce_necessary_update(data_usage)
@@ -159,24 +209,6 @@ def send_test_message_check(message):
         value_msg = bot.send_message(message.from_user.id, 'TEST5')
     if message.text == button_groups:
         produce_groups(message)
-        # bot.delete_message(message.chat.id, message.message_id)
-    
-        
-    # r1 = InlineQueryResultArticle('1', 'Result1', InputTextMessageContent('hi'))
-    # r2 = InlineQueryResultArticle('2', 'Result2', InputTextMessageContent('hi'))
-    # bot.answer_inline_query(message.from_user.id, [r1, r2])
-
-    # print(query)
-    # print('#####################################4444')
-    # data_usage.check_db()
-    # print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-    # markup_default.add(button_help)
-    
-    # bot.register_next_step_handler(query, process_step)
-    # markup_test = ReplyKeyboardMarkup(True, True, row_width=1)
-    # markup_test.row('5', '6')
-    # markup_test.row('4', '7')
-    # bot.send_message(message.from_user.id, "Yeezus2", reply_markup=markup_test)
 
 
 if __name__ == '__main__':

@@ -147,6 +147,15 @@ class TelegramManager:
             return value_string
         return self.produce_name_added(f"{value_string}(1)", value_list)
 
+    #CREATE VALUES FOR THE CALLBACK
+    def make_callback_values(self, value_type:str) -> str:
+        """
+        Method which is dedicated to create the callback data for the user values
+        Input:  value_type = type which is dedicated to create values
+        Output: string with callback data
+        """
+        pass
+
 
 if __name__ == '__main__':
     a = TelegramManager()
