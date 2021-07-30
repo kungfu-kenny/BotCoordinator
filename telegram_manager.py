@@ -19,6 +19,7 @@ from config import (bot_key,
                     button_settings,
                     button_locations,
                     chat_id_default,
+                    value_const_int,
                     command_name_location_add,
                     command_name_location_edit)
 
@@ -148,11 +149,23 @@ class TelegramManager:
         return self.produce_name_added(f"{value_string}(1)", value_list)
 
     #CREATE VALUES FOR THE CALLBACK
-    def make_callback_values(self, value_type:str) -> str:
+    def make_callback_values(self, value_type:str, value_id:int=value_const_int, value_index:int=value_const_int, value_len:int=value_const_int) -> str:
         """
         Method which is dedicated to create the callback data for the user values
         Input:  value_type = type which is dedicated to create values
+                value_id = id of the user
+                value_index = index if it is required
         Output: string with callback data
+        """
+        if value_type == 'next_group_list':
+            print(1)
+            #TODO make the adequate index
+
+    def produce_check_values(self, chat_id:int) -> bool:
+        """
+        Method which is dedicated to check that user 
+        Input:  chat_id = chat id from the telegram message
+        Output: boolean value which is dedicated 
         """
         pass
 

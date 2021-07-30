@@ -29,6 +29,7 @@ from config import (separator,
                     callback_sep_group_search,
                     command_name_start,
                     command_name_location_add,
+                    command_name_group_update,
                     command_name_location_edit)
 
     
@@ -44,47 +45,59 @@ def produce_groups(message):
         keyboard_group_choice.row(telebot.types.InlineKeyboardButton(button_group_mine, callback_data=callback_sep_group_mine))
     bot.reply_to(message, 'Select what to do with groups:', reply_markup=keyboard_group_choice)
 
+def produce_reply_locations(message:object, value_list:list, value_list_name:list, value_index:int) -> None:
+    #TODO add this later
+    pass
+
+def produce_reply_locations_edit(message:object, value_list:list, value_list_name:list, value_index:int) -> None:
+    #TODO add this later
+    pass
+
 #TODO make callback for the change
-def produce_reply_groups(message:object, value_list:list, value_index:int) -> None:
+def produce_reply_groups(message:object, value_list:list, value_list_name:list, value_index:int) -> None:
     """
     Function test which is dedicated to make the list of selected by users groups
     Input:  message = selected message which is dedicated 
-            value_list = list of lists with the groups which is 
+            value_list = list of lists with the groups id
+            value_list_name = list of lists with the group name 
             value_index = index of this list which is sent to the values
     Output: sent input keyboard with this values
     """
     print(message)
     print('777777777777777777777777777777777777777777777777777777777777777777')
+    value_index_next, value_index_prev = 1, 1
+
     keyboard_group_reply = telebot.types.InlineKeyboardMarkup()
     button_group_middle = f'{value_index+1}/{len(value_list)}'
-    for i in value_list[value_index]:
+    for i, j in zip(value_list[value_index], value_list_name[value_index]):
         keyboard_group_reply.row(telebot.types.InlineKeyboardButton(i, callback_data='1'), 
+                                telebot.types.InlineKeyboardButton(j, callback_data='1'),
                                 telebot.types.InlineKeyboardButton(button_groups_mine_del, callback_data='12'))
     keyboard_group_reply.row(telebot.types.InlineKeyboardButton(button_groups_mine_prev, callback_data='12'), 
                             telebot.types.InlineKeyboardButton(button_group_middle, callback_data='1'),
                             telebot.types.InlineKeyboardButton(button_groups_mine_next, callback_data='13'))
-    bot.reply_to(message, button_group_mine_text, reply_markup=keyboard_group_reply)
+    bot.send_message(message.chat.id, button_group_mine_text, reply_markup=keyboard_group_reply)
 
-def produce_reply_group_edit(message:object, value_list:list, value_index:int) -> None:
+def produce_reply_groups_edit(message:object, value_list:list, value_list_name:list, value_index:int) -> None:
     """
     Function which is dedicated to make edit of the reply groups and 
     Input:  message = object of the message in the telegram
             value_list = list with the groups for the users
+            value_list_name = list of lists with the group name
             value_index = index with the new values
     Output: we edited values of the 
     """
-    print(message)
-    print('8888888888888888888888888888888888888888888888888888888888888888888888')
-    # value_index = value_index if value_index >= 0 else len(value_list) + value_index
     keyboard_group_edit = telebot.types.InlineKeyboardMarkup()
     button_group_middle = f'{value_index+1}/{len(value_list)}'
-    for i in value_list[value_index]:
+    for i, j in zip(value_list[value_index], value_list_name[value_index]):
         keyboard_group_edit.row(telebot.types.InlineKeyboardButton(i, callback_data='1'), 
+                                telebot.types.InlineKeyboardButton(j, callback_data='1'),
                                 telebot.types.InlineKeyboardButton(button_groups_mine_del, callback_data='12'))
+
     keyboard_group_edit.row(telebot.types.InlineKeyboardButton(button_groups_mine_prev, callback_data='12'), 
                             telebot.types.InlineKeyboardButton(button_group_middle, callback_data='1'),
                             telebot.types.InlineKeyboardButton(button_groups_mine_next, callback_data='13'))
-    bot.edit_message_reply_markup(message, button_group_mine_text, reply_markup=keyboard_group_edit)
+    bot.edit_message_reply_markup(message.chat.id, message.id, button_group_mine_text, reply_markup=keyboard_group_edit)
 
 @bot.message_handler(content_types=['location', 'venue'])
 def check_coordinates(message):
@@ -137,6 +150,14 @@ def add_location_name(message):
                                 message.from_user.last_name], value_name, value_latitude, value_longitude)
     bot.send_message(message.chat.id, f"We successfully added location with name:\n '{value_name}'")
 
+@bot.message_handler(commands=[command_name_group_update])
+def change_group_name(message):
+    """
+    Method which is dedicated to update the group name; 
+    """
+    #TODO think about this later
+    pass
+
 @bot.message_handler(commands=[command_name_location_edit])
 def change_location_name_message(message):
     """
@@ -187,11 +208,18 @@ def calculate_answer_on_the_buttons(query):
         print('Here ')
         print('==========================================================')
         value_test = [['1', '2'], ['3', '4']] #TODO make values on the usage
-        produce_reply_groups(query.message, value_test, 0)
+        value_test_name = [['One', 'Two'], ['3', '4']]
+        produce_reply_groups(query.message, value_test, value_test_name, 0)
         return
 
     if data == callback_sep_group_search:
         print('Think ')
+        return
+    
+    if data == '13':
+        value_test = [['1', '2'], ['3', '4']] #TODO make values on the usage
+        value_test_name = [['One', 'Two'], ['3', '4']]
+        produce_reply_groups_edit(query.message, value_test, value_test_name, 1)
         return
     
     #TODO make values for the updating this values
@@ -208,6 +236,10 @@ def send_test_message_check(message):
     if message.text == button_help:
         value_msg = bot.send_message(message.from_user.id, 'TEST5')
     if message.text == button_groups:
+        print(message.chat.id)
+        print('__________________')
+        print(message)
+        print('&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&')
         produce_groups(message)
 
 

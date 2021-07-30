@@ -56,4 +56,7 @@ command_name_start = 'start'
 command_name_location_add = 'add_location_name'
 command_name_location_edit = 'edit_location_name'
 
+command_name_group_update = 'edit_group_value'
+
 value_limit = 10
+value_const_int = -0.4
