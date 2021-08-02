@@ -5,13 +5,8 @@ from pprint import pprint
 from telebot.types import ReplyKeyboardMarkup
 from telegram_bot import bot
 from config import (bot_key, 
+                    const,
                     separator, 
-                    callback_sep_upd,
-                    callback_sep_hel,
-                    callback_sep_gro,
-                    callback_sep_loc,
-                    callback_sep_set,
-                    callback_sep_sup,
                     button_help, 
                     button_update,
                     button_groups,
@@ -19,7 +14,11 @@ from config import (bot_key,
                     button_settings,
                     button_locations,
                     chat_id_default,
-                    value_const_int,
+                    callback_next,
+                    callback_delete,
+                    value_limit_groups,
+                    callback_sep_group_upd,
+                    callback_sep_group_next,
                     command_name_location_add,
                     command_name_location_edit)
 
@@ -82,17 +81,6 @@ class TelegramManager:
         value_parsed = [[int(v[0]), v[1], int(v[2]), v[3], v[4], v[5]] for v in value_parsed]
         return value_parsed
 
-    def manage_callback_data(self, value_string:str) -> set:
-        """
-        Method which is dedicated to manage all posible callback data to the function
-        Input:  value_string = string which is sent to the 
-        Output: set with sent values which is required
-        """
-        if callback_sep_sup in value_string:
-            return ()
-        if callback_sep_hel in value_string:
-            return ()
-
     @staticmethod
     def manage_added_name(value_string:str) -> set:
         """
@@ -148,18 +136,52 @@ class TelegramManager:
             return value_string
         return self.produce_name_added(f"{value_string}(1)", value_list)
 
-    #CREATE VALUES FOR THE CALLBACK
-    def make_callback_values(self, value_type:str, value_id:int=value_const_int, value_index:int=value_const_int, value_len:int=value_const_int) -> str:
+    def make_callback_values(self, value_type:str, value_id:int=const, value_index:int=const, value_len:int=const, value_group:int=const) -> str:
         """
         Method which is dedicated to create the callback data for the user values
         Input:  value_type = type which is dedicated to create values
                 value_id = id of the user
                 value_index = index if it is required
+                value_len = len of the subarrays
+                value_group = group which is deleted
         Output: string with callback data
         """
-        if value_type == 'next_group_list':
-            print(1)
-            #TODO make the adequate index
+        if value_type == callback_next:
+            sep = callback_sep_group_next
+            return f"{value_id}{sep}{value_index}{sep}{value_len}"
+        if value_type == callback_delete:
+            sep = callback_sep_group_upd
+            return f"{value_id}{sep}{value_index}{sep}{value_len}{sep}{value_group}"
+
+    @staticmethod
+    def check_index_inserted(value_index:str, value_len:int) -> int:
+        """
+        Static method which is dedicated to get the 
+        Input:  value_index = index value which is going to be
+                value_len = length of the array
+        Output: we used correct index
+        """
+        value_index = value_index % value_len if value_index >= value_len else value_index
+        value_index = value_index + value_len if value_index < 0 else value_index
+        return value_index 
+
+    @staticmethod
+    def reconfigure_list_sublists(value_list:list) -> list:
+        """
+        Static method which is dedicated to rconfigure list after the deletion of the group
+        Input:  value_list = list values which is dedicated
+        Output: list but reconfigured
+        """
+        def chunk(value_list:list, value_len:int):
+            """
+            Function for chunking values of the
+            Input:  value_list = original list
+                    value_len = 
+            Output: len on which to chunk values
+            """
+            for i in range(0, len(value_list), value_len):
+                yield value_list[i:i + value_len]
+        return chunk(value_list, value_limit_groups)
 
     def produce_check_values(self, chat_id:int) -> bool:
         """

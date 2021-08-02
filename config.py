@@ -16,8 +16,6 @@ table_groups = 'groups'
 table_users_locations = 'users_locations'
 table_users_groups = 'users_groups'
 
-callback_sep_upd = "🔄"
-callback_sep_hel = "❔"
 callback_sep_set = "⚙️"
 callback_sep_sup = "💰" 
 callback_sep_loc = "🌐"
@@ -26,6 +24,8 @@ callback_sep_gro = "🎻"
 callback_sep_addloc = "111"
 callback_sep_senloc = "112"
 
+callback_sep_group_upd = "u"
+callback_sep_group_next = "x"
 callback_sep_group_search = "221"
 callback_sep_group_mine = "222"
 
@@ -48,7 +48,7 @@ button_group_search = "Search Groups"
 button_group_mine = 'My groups'
 
 entrance_values = "Welcome to the Group Management"
-entrance_bot_usage = "Nico, let's go bowling"
+entrance_bot_usage = "Niko, let's go bowling"
 entrance_bot_img_name = 'roman.jpg'
 entrance_bot_img_link = os.getenv('IMG_ROMAN')
 
@@ -59,4 +59,8 @@ command_name_location_edit = 'edit_location_name'
 command_name_group_update = 'edit_group_value'
 
 value_limit = 10
-value_const_int = -0.4
+value_limit_groups = 2
+const = -0.4
+
+callback_next = 'next_group_list'
+callback_delete = 'update_group_list'
