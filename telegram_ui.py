@@ -1,14 +1,10 @@
 import telebot
-from telebot.types import (ReplyKeyboardMarkup, 
-                            InlineKeyboardMarkup, 
-                            InputTextMessageContent,
-                            InlineQueryResultArticle)
+from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 from telegram_bot import bot
 from db_usage import DataUsage
 from user_profiler import UserProfiler
 from telegram_manager import TelegramManager
-from config import (separator,
-                    button_help, 
+from config import (button_help, 
                     button_update,
                     button_groups,
                     button_support,
@@ -18,15 +14,19 @@ from config import (separator,
                     button_group_mine,
                     button_group_search,
                     button_location_send,
+                    button_location_show,
                     button_groups_mine_del,
-                    button_group_mine_text,
+                    button_groups_mine_text,
                     button_groups_mine_prev,
                     button_groups_mine_next,
                     entrance_bot_usage,
-                    entrance_values,
-                    callback_next,
-                    callback_delete,
+                    callback_next_loc,
+                    callback_show_loc,
+                    callback_delete_loc,
+                    callback_next_group,
+                    callback_delete_group,
                     callback_sep_addloc,
+                    callback_sep_loc_next,
                     callback_sep_group_upd,
                     callback_sep_group_next,
                     callback_sep_group_mine,
@@ -43,19 +43,41 @@ telegram_manager = TelegramManager()
 markup_test = telegram_manager.return_reply_keyboard()
 
 def produce_groups(message):
-    keyboard_group_choice = telebot.types.InlineKeyboardMarkup()
-    keyboard_group_choice.row(telebot.types.InlineKeyboardButton(button_group_search, callback_data=callback_sep_group_search))
+    keyboard_group_choice = InlineKeyboardMarkup()
+    keyboard_group_choice.row(InlineKeyboardButton(button_group_search, callback_data=callback_sep_group_search))
     if data_usage.check_presence_groups(message.chat.id):
-        keyboard_group_choice.row(telebot.types.InlineKeyboardButton(button_group_mine, callback_data=callback_sep_group_mine))
+        keyboard_group_choice.row(InlineKeyboardButton(button_group_mine, callback_data=callback_sep_group_mine))
     bot.reply_to(message, 'Select what to do with groups:', reply_markup=keyboard_group_choice)
 
 def produce_reply_locations(message:object, value_list:list, value_list_name:list, value_index:int) -> None:
-    #TODO add this later
-    pass
+    keyboard_location_reply = InlineKeyboardMarkup()
+    value_index_next = telegram_manager.make_callback_values(callback_next_loc, message.chat.id, value_index+1, len(value_list))
+    value_index_prev = telegram_manager.make_callback_values(callback_next_loc, message.chat.id, value_index-1, len(value_list))
+    button_loc_middle = f'{value_index+1}/{len(value_list)}'
+    for (index, i), j in zip(enumerate(value_list[value_index]), value_list_name[value_index]):
+        keyboard_location_reply.row(InlineKeyboardButton(i, callback_data='1'), 
+                                InlineKeyboardButton(j, callback_data='1'),
+                                InlineKeyboardButton(button_location_show, callback_data='12'),
+                                InlineKeyboardButton(button_groups_mine_del, callback_data='12'))
+    keyboard_location_reply.row(InlineKeyboardButton(button_groups_mine_prev, callback_data=value_index_prev), 
+                            InlineKeyboardButton(button_loc_middle, callback_data='1'),
+                            InlineKeyboardButton(button_groups_mine_next, callback_data=value_index_next))
+    bot.send_message(message.chat.id, button_groups_mine_text, reply_markup=keyboard_location_reply)        
 
 def produce_reply_locations_edit(message:object, value_list:list, value_list_name:list, value_index:int) -> None:
-    #TODO add this later
-    pass
+    keyboard_location_reply_edit = InlineKeyboardMarkup()
+    value_index_next = telegram_manager.make_callback_values(callback_next_loc, message.chat.id, value_index+1, len(value_list))
+    value_index_prev = telegram_manager.make_callback_values(callback_next_loc, message.chat.id, value_index-1, len(value_list))
+    button_loc_middle = f'{value_index+1}/{len(value_list)}'
+    for (index, i), j in zip(enumerate(value_list[value_index]), value_list_name[value_index]):
+        keyboard_location_reply_edit.row(InlineKeyboardButton(i, callback_data='1'), 
+                                InlineKeyboardButton(j, callback_data='1'),
+                                InlineKeyboardButton(button_location_show, callback_data='12'),
+                                InlineKeyboardButton(button_groups_mine_del, callback_data='12'))
+    keyboard_location_reply_edit.row(InlineKeyboardButton(button_groups_mine_prev, callback_data=value_index_prev), 
+                            InlineKeyboardButton(button_loc_middle, callback_data='1'),
+                            InlineKeyboardButton(button_groups_mine_next, callback_data=value_index_next))
+    bot.edit_message_reply_markup(message.chat.id, message.id, button_groups_mine_text, reply_markup=keyboard_location_reply_edit)
 
 def produce_reply_groups(message:object, value_list:list, value_list_name:list, value_index:int) -> None:
     """
@@ -66,20 +88,20 @@ def produce_reply_groups(message:object, value_list:list, value_list_name:list, 
             value_index = index of this list which is sent to the values
     Output: sent input keyboard with this values
     """
-    value_index_next = telegram_manager.make_callback_values(callback_next, message.chat.id, value_index+1, len(value_list))
-    value_index_prev = telegram_manager.make_callback_values(callback_next, message.chat.id, value_index-1, len(value_list))
+    value_index_next = telegram_manager.make_callback_values(callback_next_group, message.chat.id, value_index+1, len(value_list))
+    value_index_prev = telegram_manager.make_callback_values(callback_next_group, message.chat.id, value_index-1, len(value_list))
     #TODO add values for the creating the callbacks
-    keyboard_group_reply = telebot.types.InlineKeyboardMarkup()
+    keyboard_group_reply = InlineKeyboardMarkup()
     button_group_middle = f'{value_index+1}/{len(value_list)}'
-    for i, j in zip(value_list[value_index], value_list_name[value_index]):
-        keyboard_group_reply.row(telebot.types.InlineKeyboardButton(i, callback_data='1'), 
-                                telebot.types.InlineKeyboardButton(j, callback_data='1'),
+    for (index, i), j in zip(enumerate(value_list[value_index]), value_list_name[value_index]):
+        keyboard_group_reply.row(InlineKeyboardButton(i, callback_data='1'), 
+                                InlineKeyboardButton(j, callback_data='1'),
                                 # telebot.types.InlineKeyboardButton(text="link", url="https://google.com"),
-                                telebot.types.InlineKeyboardButton(button_groups_mine_del, callback_data='12'))
-    keyboard_group_reply.row(telebot.types.InlineKeyboardButton(button_groups_mine_prev, callback_data=value_index_prev), 
-                            telebot.types.InlineKeyboardButton(button_group_middle, callback_data='1'),
-                            telebot.types.InlineKeyboardButton(button_groups_mine_next, callback_data=value_index_next))
-    bot.send_message(message.chat.id, button_group_mine_text, reply_markup=keyboard_group_reply)
+                                InlineKeyboardButton(button_groups_mine_del, callback_data='12'))
+    keyboard_group_reply.row(InlineKeyboardButton(button_groups_mine_prev, callback_data=value_index_prev), 
+                            InlineKeyboardButton(button_group_middle, callback_data='1'),
+                            InlineKeyboardButton(button_groups_mine_next, callback_data=value_index_next))
+    bot.send_message(message.chat.id, button_groups_mine_text, reply_markup=keyboard_group_reply)
 
 def produce_reply_groups_edit(message:object, value_list:list, value_list_name:list, value_index:int) -> None:
     """
@@ -88,34 +110,34 @@ def produce_reply_groups_edit(message:object, value_list:list, value_list_name:l
             value_list = list with the groups for the users
             value_list_name = list of lists with the group name
             value_index = index with the new values
-    Output: we edited values of the 
+    Output: we edited values of the group sending
     """
-    keyboard_group_edit = telebot.types.InlineKeyboardMarkup()
+    keyboard_group_edit = InlineKeyboardMarkup()
     button_group_middle = f'{value_index+1}/{len(value_list)}'
-    value_index_next = telegram_manager.make_callback_values(callback_next, message.chat.id, value_index+1, len(value_list))
-    value_index_prev = telegram_manager.make_callback_values(callback_next, message.chat.id, value_index-1, len(value_list))
-    for i, j in zip(value_list[value_index], value_list_name[value_index]):
-        keyboard_group_edit.row(telebot.types.InlineKeyboardButton(i, callback_data='1'), 
-                                telebot.types.InlineKeyboardButton(j, callback_data='1'),
-                                # telebot.types.InlineKeyboardButton(text="link", url="https://google.com"),
-                                telebot.types.InlineKeyboardButton(button_groups_mine_del, callback_data='12'))
+    value_index_next = telegram_manager.make_callback_values(callback_next_group, message.chat.id, value_index+1, len(value_list))
+    value_index_prev = telegram_manager.make_callback_values(callback_next_group, message.chat.id, value_index-1, len(value_list))
+    for (index, i), j in zip(enumerate(value_list[value_index]), value_list_name[value_index]):
+        keyboard_group_edit.row(InlineKeyboardButton(i, callback_data='1'), 
+                                InlineKeyboardButton(j, callback_data='1'),
+                                # InlineKeyboardButton(text="link", url="https://google.com"),
+                                InlineKeyboardButton(button_groups_mine_del, callback_data='12'))
 
-    keyboard_group_edit.row(telebot.types.InlineKeyboardButton(button_groups_mine_prev, callback_data=value_index_prev), 
-                            telebot.types.InlineKeyboardButton(button_group_middle, callback_data='1'),
-                            telebot.types.InlineKeyboardButton(button_groups_mine_next, callback_data=value_index_next))
-    bot.edit_message_reply_markup(message.chat.id, message.id, button_group_mine_text, reply_markup=keyboard_group_edit)
+    keyboard_group_edit.row(InlineKeyboardButton(button_groups_mine_prev, callback_data=value_index_prev), 
+                            InlineKeyboardButton(button_group_middle, callback_data='1'),
+                            InlineKeyboardButton(button_groups_mine_next, callback_data=value_index_next))
+    bot.edit_message_reply_markup(message.chat.id, message.id, button_groups_mine_text, reply_markup=keyboard_group_edit)
 
 @bot.message_handler(content_types=['location', 'venue'])
 def check_coordinates(message):
     telegram_manager.produce_necessary_update(data_usage)
     #TODO add keyboard of save, edit, delete, rename values
-    keyboard_locations_choice = telebot.types.InlineKeyboardMarkup()
-    keyboard_locations_choice.row(telebot.types.InlineKeyboardButton(button_location_add, callback_data=callback_sep_addloc))
+    keyboard_locations_choice = InlineKeyboardMarkup()
+    keyboard_locations_choice.row(InlineKeyboardButton(button_location_add, callback_data=callback_sep_addloc))
     if data_usage.check_presence_groups(message.chat.id):
-        keyboard_locations_choice.row(telebot.types.InlineKeyboardButton(button_location_send, callback_data=115))
+        keyboard_locations_choice.row(InlineKeyboardButton(button_location_send, callback_data=115))
     if data_usage.check_presence_locations(message.chat.id):
-        keyboard_locations_choice.row(telebot.types.InlineKeyboardButton('Update Tags', callback_data=114),
-                telebot.types.InlineKeyboardButton('Remove Tags', callback_data=111))
+        keyboard_locations_choice.row(InlineKeyboardButton('Update Tags', callback_data=114),
+                                    InlineKeyboardButton('Remove Tags', callback_data=111))
     bot.reply_to(message, 'Select command what to do with a location:', reply_markup=keyboard_locations_choice)
 
 @bot.message_handler(content_types=['test'])
@@ -211,7 +233,8 @@ def calculate_answer_on_the_buttons(query):
         return
     
     if data == callback_sep_group_search:
-        print('Think ')
+        message_print = "Unfortunatelly, we didn't produce this feature yet"
+        bot.send_message(query.message.chat.id, message_print)
         return
 
     if callback_sep_group_upd in data:
@@ -230,10 +253,19 @@ def calculate_answer_on_the_buttons(query):
     if callback_sep_group_next in data:
         value_id, value_index, value_len = data.split(callback_sep_group_next)
         value_id, value_index, value_len = int(value_id), int(value_index), int(value_len)
-        value_id = [['1', '2'], ['3', '4']] 
+        value_id_ = [['1', '2'], ['3', '4']] 
         value_name = [['One', 'Two'], ['3', '4']]
         value_index = telegram_manager.check_index_inserted(value_index, value_len)
-        produce_reply_groups_edit(query.message, value_id, value_name, value_index)
+        produce_reply_groups_edit(query.message, value_id_, value_name, value_index)
+        return
+
+    if callback_sep_loc_next in data:
+        value_id, value_index, value_len = data.split(callback_sep_loc_next)
+        value_id, value_index, value_len = int(value_id), int(value_index), int(value_len)
+        value_test = [['1', '2'], ['3', '4'], ['5', '6']] #TODO make values on the usage
+        value_name = [['One', 'Two'], ['3', '4'], ['Three', '6']]
+        value_index = telegram_manager.check_index_inserted(value_index, value_len)
+        produce_reply_locations_edit(query.message, value_test, value_name, value_index)
         return
 
     if data == callback_sep_group_mine:
@@ -249,16 +281,23 @@ def send_test_message_check(message):
         value_msg = bot.send_message(message.from_user.id, 'TEST3')
         # bot.delete_message(message.chat.id, message.message_id)
         # delete_message(message.chat.id, .message_id)
-    elif message.text == button_settings:
+    if message.text == button_settings:
         value_msg = bot.send_message(message.from_user.id, 'TEST4')
     if message.text == button_help:
         value_msg = bot.send_message(message.from_user.id, 'TEST5')
     if message.text == button_groups:
-        print(message.chat.id)
-        print('__________________')
-        print(message)
-        print('&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&')
+        # print(message.chat.id)
+        # print('__________________')
+        # print(message)
+        # print('&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&')
         produce_groups(message)
+    if message.text == button_locations:
+        # value_locations =
+        value_test = [['1', '2'], ['3', '4'], ['5', '6']] #TODO make values on the usage
+        value_test_name = [['One', 'Two'], ['3', '4'], ['Three', '6']]
+        produce_reply_locations(message, value_test, value_test_name, 0)
+    if message.text == button_support:
+        value_msg = bot.send_message(message.from_user.id, 'TEST6')
 
 
 if __name__ == '__main__':

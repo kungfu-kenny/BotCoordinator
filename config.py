@@ -23,16 +23,20 @@ callback_sep_gro = "🎻"
 
 callback_sep_addloc = "111"
 callback_sep_senloc = "112"
-
-callback_sep_group_upd = "u"
-callback_sep_group_next = "x"
 callback_sep_group_search = "221"
 callback_sep_group_mine = "222"
 
+callback_sep_loc_show = 'w'
+callback_sep_loc_del = 'z'
+callback_sep_loc_next = "l"
+callback_sep_group_upd = "u"
+callback_sep_group_next = "x"
+
+button_location_show = "Show 📍"
 button_groups_mine_del = '❌'
 button_groups_mine_prev = '⬅️'
 button_groups_mine_next = '➡️'
-button_group_mine_text = 'All added groups:'
+button_groups_mine_text = 'All added groups:'
 
 button_update = 'Update 🔄'
 button_help = 'Help ❔'
@@ -62,5 +66,8 @@ value_limit = 10
 value_limit_groups = 2
 const = -0.4
 
-callback_next = 'next_group_list'
-callback_delete = 'update_group_list'
+callback_next_group = 'next_group_list'
+callback_delete_group = 'update_group_list'
+callback_next_loc = 'next_loc_list'
+callback_delete_loc = 'update_loc_list'
+callback_show_loc = 'show_loc_list'

@@ -14,9 +14,15 @@ from config import (bot_key,
                     button_settings,
                     button_locations,
                     chat_id_default,
-                    callback_next,
-                    callback_delete,
+                    callback_show_loc,
+                    callback_next_loc,
+                    callback_delete_loc,
+                    callback_next_group,
+                    callback_delete_group,
                     value_limit_groups,
+                    callback_sep_loc_del,
+                    callback_sep_loc_show,
+                    callback_sep_loc_next,
                     callback_sep_group_upd,
                     callback_sep_group_next,
                     command_name_location_add,
@@ -146,11 +152,20 @@ class TelegramManager:
                 value_group = group which is deleted
         Output: string with callback data
         """
-        if value_type == callback_next:
+        if value_type == callback_next_group:
             sep = callback_sep_group_next
             return f"{value_id}{sep}{value_index}{sep}{value_len}"
-        if value_type == callback_delete:
+        if value_type == callback_delete_group:
             sep = callback_sep_group_upd
+            return f"{value_id}{sep}{value_index}{sep}{value_len}{sep}{value_group}"
+        if value_type == callback_next_loc:
+            sep = callback_sep_loc_next
+            return f"{value_id}{sep}{value_index}{sep}{value_len}"
+        if value_type == callback_delete_loc:
+            sep = callback_sep_loc_del
+            return f"{value_id}{sep}{value_index}{sep}{value_len}{sep}{value_group}"
+        if value_type == callback_show_loc:
+            sep = callback_sep_loc_show
             return f"{value_id}{sep}{value_index}{sep}{value_len}{sep}{value_group}"
 
     @staticmethod
