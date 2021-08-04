@@ -116,6 +116,35 @@ class DataUsage:
             msg = f'We found problems with checking values of the previous insertion, mistake: {e}'
             self.proceed_error(msg)
 
+    def get_user_groups(self, id_chat:int) -> set:
+        """
+        Method which is dedicated to return values of the groups and group names
+        Input:  id_chat = id of the chat which was using this feature
+        Output: set with lists of the values with the groups and names
+        """
+        try:
+            a = 1
+        except Exception as e:
+            msg = f"We found problems with returning groups to values, mistake: {e}"
+            self.proceed_error(msg)
+
+    def get_user_coordinate(self, id_chat:int, id_location:int) -> list:
+        """
+        Method which is dedicated to get location for the user 
+        Input:  id_chat = chat which required coordinates
+                id_location = id of the location of selected user
+        Output: we returned list values from the 
+        """
+        try:
+            #TODO add check on the checking the coordinates
+            value_list = self.cursor.execute(f"SELECT * FROM {table_locations} WHERE id={id_location};").fetchone()
+            print(value_list)
+            print('#################################################################')
+            return value_list
+        except Exception as e:
+            msg = f"We found problems with returning elected coordinate to the selected user, mistake: {e}"
+            return []
+
     def get_group_values(self, group_id:int, group_name:str) -> bool:
         """
         Method which is dedicated to check the presence of selected group or update name in other cases
@@ -188,6 +217,21 @@ class DataUsage:
             msg = f"We faced problems with isertion of the groups. Mistake: {e}"
             self.proceed_error(msg)
             return False
+
+    def check_chat_id(self, id_chat:int) -> set:
+        """
+        Method which is dedicated to check that 
+        Input:  id_chat = value chat which was previously used
+        Output: boolean values for the check
+        """
+        try:        
+            value_user = bool(self.cursor.execute(f"SELECT id FROM {table_users} WHERE id={id_chat};").fetchone())
+            value_group = bool(self.cursor.execute(f"SELECT id FROM {table_groups} WHERE id={id_chat};").fetchone())
+            return value_user, value_group
+        except Exception as e:
+            msg = f"We faced problems with check on which chat it can be used. Mistake: {e}"
+            self.proceed_error(msg)
+            return False, False
 
     def connect_user_group(self, id_group:int, id_user:int) -> bool:
         """
@@ -286,14 +330,15 @@ class DataUsage:
             list_id = self.cursor.execute(f"SELECT id_location FROM {table_users_locations} WHERE id_user={id};").fetchall()
             if not list_id:
                 return [], True
-            value_str = ','.join([str(l[0]) for l in list_id])
+            list_id = [str(l[0]) for l in list_id]
+            value_str = ','.join(list_id)
             value_list = self.cursor.execute(f"SELECT name_location from {table_locations} WHERE id IN ({value_str});").fetchall()
-            return [f[0] for f in value_list], len(value_list) < value_limit
+            return [f[0] for f in value_list], list_id, len(value_list) < value_limit
         except Exception as e:
             msg = f"We have problems with getting coordinates for the users. Mistake: {e}"
             self.proceed_error(msg)
             print('=================================================')
-            return [], False
+            return [], [], False
 
     def produce_values(self) -> None:
         """

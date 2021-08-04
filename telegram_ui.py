@@ -19,7 +19,11 @@ from config import (button_help,
                     button_groups_mine_text,
                     button_groups_mine_prev,
                     button_groups_mine_next,
+                    chat_id_default,
+                    entrance_groups_list,
                     entrance_bot_usage,
+                    entrance_update_bad,
+                    entrance_update_good,
                     callback_next_loc,
                     callback_show_loc,
                     callback_delete_loc,
@@ -31,6 +35,7 @@ from config import (button_help,
                     callback_sep_group_next,
                     callback_sep_group_mine,
                     callback_sep_group_search,
+                    value_limit_locations,
                     command_name_start,
                     command_name_location_add,
                     command_name_group_update,
@@ -42,12 +47,26 @@ user_profiler = UserProfiler()
 telegram_manager = TelegramManager()
 markup_test = telegram_manager.return_reply_keyboard()
 
+
+def make_lambda_check() -> bool:
+    try:
+        telegram_manager.produce_necessary_update(data_usage)
+        return True
+    except Exception as e:
+        bot.send_message(chat_id_default, f'We faced problem with updating groups: {e}')
+        return False
+
+def produce_location_show(value_user:int, value_list:list) -> None:
+    *_, value_latitude, value_longitude = value_list
+    value_loc = bot.send_location(value_user, value_latitude, value_longitude, disable_notification=False)
+    bot.reply_to(value_loc, telegram_manager.produce_message_for_location(value_list))
+
 def produce_groups(message):
     keyboard_group_choice = InlineKeyboardMarkup()
     keyboard_group_choice.row(InlineKeyboardButton(button_group_search, callback_data=callback_sep_group_search))
     if data_usage.check_presence_groups(message.chat.id):
         keyboard_group_choice.row(InlineKeyboardButton(button_group_mine, callback_data=callback_sep_group_mine))
-    bot.reply_to(message, 'Select what to do with groups:', reply_markup=keyboard_group_choice)
+    bot.reply_to(message, entrance_groups_list, reply_markup=keyboard_group_choice)
 
 def produce_reply_locations(message:object, value_list:list, value_list_name:list, value_index:int) -> None:
     keyboard_location_reply = InlineKeyboardMarkup()
@@ -129,7 +148,6 @@ def produce_reply_groups_edit(message:object, value_list:list, value_list_name:l
 
 @bot.message_handler(content_types=['location', 'venue'])
 def check_coordinates(message):
-    telegram_manager.produce_necessary_update(data_usage)
     #TODO add keyboard of save, edit, delete, rename values
     keyboard_locations_choice = InlineKeyboardMarkup()
     keyboard_locations_choice.row(InlineKeyboardButton(button_location_add, callback_data=callback_sep_addloc))
@@ -140,14 +158,8 @@ def check_coordinates(message):
                                     InlineKeyboardButton('Remove Tags', callback_data=111))
     bot.reply_to(message, 'Select command what to do with a location:', reply_markup=keyboard_locations_choice)
 
-@bot.message_handler(content_types=['test'])
-def test(message):
-    print(message)
-    print('###########################################################')
-
 @bot.message_handler(commands=[command_name_start])
 def start_messages(message):
-    telegram_manager.produce_necessary_update(data_usage)
     markup_test = telegram_manager.return_reply_keyboard()
     link_image = user_profiler.work_on_the_picture()
     if link_image:
@@ -162,7 +174,7 @@ def add_location_name(message):
     elif not message.reply_to_message:
         bot.reply_to(message, "You need to reply this message to youre coordinate which you have sent")
         return    
-    value_coordinates, value_limit = data_usage.get_user_coordinates(message.chat.id)
+    value_coordinates, _, value_limit = data_usage.get_user_coordinates(message.chat.id)
     if not value_limit:
         bot.reply_to(message, "You have surpassed the limit of the values")
         return
@@ -262,10 +274,13 @@ def calculate_answer_on_the_buttons(query):
     if callback_sep_loc_next in data:
         value_id, value_index, value_len = data.split(callback_sep_loc_next)
         value_id, value_index, value_len = int(value_id), int(value_index), int(value_len)
-        value_test = [['1', '2'], ['3', '4'], ['5', '6']] #TODO make values on the usage
-        value_name = [['One', 'Two'], ['3', '4'], ['Three', '6']]
+        values_name, values_id, _ = data_usage.get_user_coordinates(value_id)
+        # print(values_name, values_id)
+        # print('=====================================================================')
+        values_id = telegram_manager.reconfigure_list_sublists(values_id, value_limit_locations)
+        values_name = telegram_manager.reconfigure_list_sublists(values_name, value_limit_locations)
         value_index = telegram_manager.check_index_inserted(value_index, value_len)
-        produce_reply_locations_edit(query.message, value_test, value_name, value_index)
+        produce_reply_locations_edit(query.message, values_id, values_name, value_index)
         return
 
     if data == callback_sep_group_mine:
@@ -276,28 +291,38 @@ def calculate_answer_on_the_buttons(query):
 
 @bot.message_handler(content_types=["text"])
 def send_test_message_check(message):
-    telegram_manager.produce_necessary_update(data_usage)
+    previously_updated = make_lambda_check()
+    presence_user, presence_group = data_usage.check_chat_id(message.chat.id)
+    value_bool, value_text = telegram_manager.produce_check_values(presence_user, presence_group, message.chat.id)
+    if value_text:
+        bot.send_message(chat_id_default, value_text)
+        return
+    if not value_bool and not value_text:
+        return
     if message.text == button_update:
-        value_msg = bot.send_message(message.from_user.id, 'TEST3')
-        # bot.delete_message(message.chat.id, message.message_id)
-        # delete_message(message.chat.id, .message_id)
+        try:
+            if not previously_updated:
+                make_lambda_check()
+            bot.send_message(message.chat.id, entrance_update_good)
+        except Exception as e:
+            bot.send_message(message.chat.id, entrance_update_bad)
+            bot.send_message(chat_id_default, f'We faced problem with updating groups: {e}')
     if message.text == button_settings:
-        value_msg = bot.send_message(message.from_user.id, 'TEST4')
+        value_msg = bot.send_message(message.chat.id, 'TEST4')
     if message.text == button_help:
-        value_msg = bot.send_message(message.from_user.id, 'TEST5')
+        value_msg = bot.send_message(message.chat.id, 'TEST5')
     if message.text == button_groups:
-        # print(message.chat.id)
-        # print('__________________')
-        # print(message)
-        # print('&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&')
         produce_groups(message)
     if message.text == button_locations:
-        # value_locations =
-        value_test = [['1', '2'], ['3', '4'], ['5', '6']] #TODO make values on the usage
-        value_test_name = [['One', 'Two'], ['3', '4'], ['Three', '6']]
-        produce_reply_locations(message, value_test, value_test_name, 0)
+        #TODO remove from here and add to the new values
+        # value_list = data_usage.get_user_coordinate(message.chat.id, 1)
+        # produce_location_show(message.chat.id, value_list)
+        value_name, value_id, _ = data_usage.get_user_coordinates(message.chat.id)
+        value_id = telegram_manager.reconfigure_list_sublists(value_id, value_limit_locations)
+        value_name = telegram_manager.reconfigure_list_sublists(value_name, value_limit_locations)
+        produce_reply_locations(message, value_id, value_name, 0)
     if message.text == button_support:
-        value_msg = bot.send_message(message.from_user.id, 'TEST6')
+        value_msg = bot.send_message(message.chat.id, 'TEST6')
 
 
 if __name__ == '__main__':

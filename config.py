@@ -55,6 +55,9 @@ entrance_values = "Welcome to the Group Management"
 entrance_bot_usage = "Niko, let's go bowling"
 entrance_bot_img_name = 'roman.jpg'
 entrance_bot_img_link = os.getenv('IMG_ROMAN')
+entrance_update_good = "We successfully synchronized values of the groups hich you added to the bot"
+entrance_update_bad = "Unfortunatelly, faced some problems with adding groups to database"
+entrance_groups_list = 'Select what to do with groups:'
 
 command_name_start = 'start'
 command_name_location_add = 'add_location_name'
@@ -64,6 +67,7 @@ command_name_group_update = 'edit_group_value'
 
 value_limit = 10
 value_limit_groups = 2
+value_limit_locations = 5
 const = -0.4
 
 callback_next_group = 'next_group_list'

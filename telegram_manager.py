@@ -181,7 +181,7 @@ class TelegramManager:
         return value_index 
 
     @staticmethod
-    def reconfigure_list_sublists(value_list:list) -> list:
+    def reconfigure_list_sublists(value_list:list, default_val:int=value_limit_groups) -> list:
         """
         Static method which is dedicated to rconfigure list after the deletion of the group
         Input:  value_list = list values which is dedicated
@@ -196,15 +196,36 @@ class TelegramManager:
             """
             for i in range(0, len(value_list), value_len):
                 yield value_list[i:i + value_len]
-        return chunk(value_list, value_limit_groups)
+        return list(chunk(value_list, default_val))
 
-    def produce_check_values(self, chat_id:int) -> bool:
+    @staticmethod
+    def produce_message_for_location(value_list:list) -> str:
+        """
+        Method which is dedicated
+        Input:  value_list = list with latitude, longitude, name
+        Output: string with values ti return for the user
+        """
+        #TODO add this change later
+        return 'Check'
+
+    def produce_check_values(self, presence_chat:bool, presence_group:bool, chat_id:int) -> set:
         """
         Method which is dedicated to check that user 
-        Input:  chat_id = chat id from the telegram message
+        Input:  presence_chat = presence in the chat database
+                presence_group = presence in the group
+                chat_id = chat id from the telegram message
         Output: boolean value which is dedicated 
         """
-        pass
+        presence_type = chat_id < 0
+        if not presence_chat and presence_group and presence_type:
+            return False, ''
+        if presence_chat and not (presence_group and presence_type):
+            return True, ''
+        if not presence_chat and not presence_group and presence_type:
+            return False, f'Check that your group was connected to the bot. Chat: {chat_id}'
+        if presence_chat and presence_group:
+            return False, f'Check you have problems with the inserted values. Chat: {chat_id}'
+        
 
 
 if __name__ == '__main__':
