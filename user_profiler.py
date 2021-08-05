@@ -6,6 +6,7 @@ from config import (folder_config,
                     entrance_bot_img_name,
                     entrance_bot_img_link)
 
+
 class UserProfiler:
     """
     class which is dedicated to work with the style of this bot;

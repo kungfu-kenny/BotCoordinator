@@ -30,7 +30,9 @@ from config import (button_help,
                     callback_next_group,
                     callback_delete_group,
                     callback_sep_addloc,
+                    callback_sep_loc_del,
                     callback_sep_loc_next,
+                    callback_sep_loc_show,
                     callback_sep_group_upd,
                     callback_sep_group_next,
                     callback_sep_group_mine,
@@ -57,9 +59,30 @@ def make_lambda_check() -> bool:
         return False
 
 def produce_location_show(value_user:int, value_list:list) -> None:
-    *_, value_latitude, value_longitude = value_list
-    value_loc = bot.send_location(value_user, value_latitude, value_longitude, disable_notification=False)
-    bot.reply_to(value_loc, telegram_manager.produce_message_for_location(value_list))
+    if value_list:
+        *_, value_latitude, value_longitude = value_list
+        value_loc = bot.send_location(value_user, value_latitude, value_longitude, disable_notification=False)
+        bot.reply_to(value_loc, telegram_manager.produce_message_for_location(value_list))
+    else:
+        msg = "Unfortunatelly, you have removed this location from the database"
+        bot.send_message(value_user, msg)
+
+def produce_location_delete(value_user:int, value_list:list) -> None:
+    if value_list:
+        value_id, value_name, *_ = value_list
+        msg = f"We successfully deleted your coordinate with name: {value_name}"
+        bot.send_message(value_user, msg, disable_notification=False)
+        data_usage.delete_location_user(value_user, value_id)
+    else:
+        msg = "You have already removed this location previously"
+        bot.send_message(value_user, msg, disable_notification=False)
+
+def produce_settings_show():
+    """
+    Function to test values
+    """
+    #TODO main check that for showing values for the values
+    pass
 
 def produce_groups(message):
     keyboard_group_choice = InlineKeyboardMarkup()
@@ -73,11 +96,12 @@ def produce_reply_locations(message:object, value_list:list, value_list_name:lis
     value_index_next = telegram_manager.make_callback_values(callback_next_loc, message.chat.id, value_index+1, len(value_list))
     value_index_prev = telegram_manager.make_callback_values(callback_next_loc, message.chat.id, value_index-1, len(value_list))
     button_loc_middle = f'{value_index+1}/{len(value_list)}'
-    for (index, i), j in zip(enumerate(value_list[value_index]), value_list_name[value_index]):
-        keyboard_location_reply.row(InlineKeyboardButton(i, callback_data='1'), 
-                                InlineKeyboardButton(j, callback_data='1'),
-                                InlineKeyboardButton(button_location_show, callback_data='12'),
-                                InlineKeyboardButton(button_groups_mine_del, callback_data='12'))
+    for i, j in zip(value_list[value_index], value_list_name[value_index]):
+        value_callback_show = telegram_manager.make_callback_values(callback_show_loc, message.chat.id, i)
+        value_callback_del = telegram_manager.make_callback_values(callback_delete_loc, message.chat.id, i)
+        keyboard_location_reply.row(InlineKeyboardButton(j, callback_data='1'),
+                                InlineKeyboardButton(button_location_show, callback_data=value_callback_show),
+                                InlineKeyboardButton(button_groups_mine_del, callback_data=value_callback_del))
     keyboard_location_reply.row(InlineKeyboardButton(button_groups_mine_prev, callback_data=value_index_prev), 
                             InlineKeyboardButton(button_loc_middle, callback_data='1'),
                             InlineKeyboardButton(button_groups_mine_next, callback_data=value_index_next))
@@ -88,11 +112,12 @@ def produce_reply_locations_edit(message:object, value_list:list, value_list_nam
     value_index_next = telegram_manager.make_callback_values(callback_next_loc, message.chat.id, value_index+1, len(value_list))
     value_index_prev = telegram_manager.make_callback_values(callback_next_loc, message.chat.id, value_index-1, len(value_list))
     button_loc_middle = f'{value_index+1}/{len(value_list)}'
-    for (index, i), j in zip(enumerate(value_list[value_index]), value_list_name[value_index]):
-        keyboard_location_reply_edit.row(InlineKeyboardButton(i, callback_data='1'), 
-                                InlineKeyboardButton(j, callback_data='1'),
-                                InlineKeyboardButton(button_location_show, callback_data='12'),
-                                InlineKeyboardButton(button_groups_mine_del, callback_data='12'))
+    for i, j in zip(value_list[value_index], value_list_name[value_index]):
+        value_callback_show = telegram_manager.make_callback_values(callback_show_loc, message.chat.id, i)
+        value_callback_del = telegram_manager.make_callback_values(callback_delete_loc, message.chat.id, i)
+        keyboard_location_reply_edit.row(InlineKeyboardButton(j, callback_data='1'),
+                                InlineKeyboardButton(button_location_show, callback_data=value_callback_show),
+                                InlineKeyboardButton(button_groups_mine_del, callback_data=value_callback_del))
     keyboard_location_reply_edit.row(InlineKeyboardButton(button_groups_mine_prev, callback_data=value_index_prev), 
                             InlineKeyboardButton(button_loc_middle, callback_data='1'),
                             InlineKeyboardButton(button_groups_mine_next, callback_data=value_index_next))
@@ -112,7 +137,7 @@ def produce_reply_groups(message:object, value_list:list, value_list_name:list, 
     #TODO add values for the creating the callbacks
     keyboard_group_reply = InlineKeyboardMarkup()
     button_group_middle = f'{value_index+1}/{len(value_list)}'
-    for (index, i), j in zip(enumerate(value_list[value_index]), value_list_name[value_index]):
+    for i, j in zip(value_list[value_index], value_list_name[value_index]):
         keyboard_group_reply.row(InlineKeyboardButton(i, callback_data='1'), 
                                 InlineKeyboardButton(j, callback_data='1'),
                                 # telebot.types.InlineKeyboardButton(text="link", url="https://google.com"),
@@ -135,7 +160,7 @@ def produce_reply_groups_edit(message:object, value_list:list, value_list_name:l
     button_group_middle = f'{value_index+1}/{len(value_list)}'
     value_index_next = telegram_manager.make_callback_values(callback_next_group, message.chat.id, value_index+1, len(value_list))
     value_index_prev = telegram_manager.make_callback_values(callback_next_group, message.chat.id, value_index-1, len(value_list))
-    for (index, i), j in zip(enumerate(value_list[value_index]), value_list_name[value_index]):
+    for i, j in zip(value_list[value_index], value_list_name[value_index]):
         keyboard_group_edit.row(InlineKeyboardButton(i, callback_data='1'), 
                                 InlineKeyboardButton(j, callback_data='1'),
                                 # InlineKeyboardButton(text="link", url="https://google.com"),
@@ -231,14 +256,20 @@ def calculate_answer_on_the_buttons(query):
         new_chat_name_last = query.message.chat.last_name
         new_chat_name_user = query.message.chat.username
         
-        a = False
+        a = False #TODO change here
         if a: #TODO we add new table in the database
             message_print = "Unfortunatelly, u didn't added default name feature, so u need to type the name with a command: "+\
                             f"/{command_name_location_add}: <name which you have selected>\n" +\
                             "Also, u can just include the autoname injection"
             bot.send_message(new_chat_id, message_print)
         else:
+            #TODO add here values to the databases, database was successfully created after it
             new_name = 'Name Default' #TODO change values
+            value_coordinates, _, value_limit = data_usage.get_user_coordinates(new_chat_id)
+            if not value_limit:
+                bot.reply_to(query.message, "You have surpassed the limit of the values")
+                return
+            new_name = telegram_manager.produce_name_added(new_name, value_coordinates)
             data_usage.insert_location([new_chat_id, new_chat_name_user, new_chat_name_first, 
                                     new_chat_name_last], new_name, new_latitude, new_longitude)
             bot.send_message(new_chat_id, f"We successfully added location with name:\n '{new_name}'")
@@ -259,7 +290,8 @@ def calculate_answer_on_the_buttons(query):
         value_index = telegram_manager.check_index_inserted(value_index, value_len)
         print(value_id, value_index, value_len)
         print('**********************************************************')
-        produce_reply_groups_edit(query.message, value_id, value_name, value_index)
+        if value_len > 1:
+            produce_reply_groups_edit(query.message, value_id, value_name, value_index)
         return
 
     if callback_sep_group_next in data:
@@ -268,25 +300,39 @@ def calculate_answer_on_the_buttons(query):
         value_id_ = [['1', '2'], ['3', '4']] 
         value_name = [['One', 'Two'], ['3', '4']]
         value_index = telegram_manager.check_index_inserted(value_index, value_len)
-        produce_reply_groups_edit(query.message, value_id_, value_name, value_index)
+        if value_len > 1:
+            produce_reply_groups_edit(query.message, value_id_, value_name, value_index)
         return
 
     if callback_sep_loc_next in data:
         value_id, value_index, value_len = data.split(callback_sep_loc_next)
         value_id, value_index, value_len = int(value_id), int(value_index), int(value_len)
         values_name, values_id, _ = data_usage.get_user_coordinates(value_id)
-        # print(values_name, values_id)
-        # print('=====================================================================')
         values_id = telegram_manager.reconfigure_list_sublists(values_id, value_limit_locations)
         values_name = telegram_manager.reconfigure_list_sublists(values_name, value_limit_locations)
         value_index = telegram_manager.check_index_inserted(value_index, value_len)
-        produce_reply_locations_edit(query.message, values_id, values_name, value_index)
+        if value_len > 1:
+            produce_reply_locations_edit(query.message, values_id, values_name, value_index)
         return
 
     if data == callback_sep_group_mine:
         value_test = [['1', '2'], ['3', '4']] #TODO make values on the usage
         value_test_name = [['One', 'Two'], ['3', '4']]
         produce_reply_groups(query.message, value_test, value_test_name, 0)
+        return
+
+    if callback_sep_loc_show in data:
+        value_id, value_loc_id = data.split(callback_sep_loc_show)
+        value_id, value_loc_id = int(value_id), int(value_loc_id)
+        value_list = data_usage.get_user_coordinate(value_id, value_loc_id)
+        produce_location_show(value_id, value_list)
+        return
+
+    if callback_sep_loc_del in data:
+        value_id, value_loc_id = data.split(callback_sep_loc_del)
+        value_id, value_loc_id = int(value_id), int(value_loc_id)
+        value_list = data_usage.get_user_coordinate(value_id, value_loc_id)
+        produce_location_delete(value_id, value_list)
         return
 
 @bot.message_handler(content_types=["text"])
@@ -308,15 +354,15 @@ def send_test_message_check(message):
             bot.send_message(message.chat.id, entrance_update_bad)
             bot.send_message(chat_id_default, f'We faced problem with updating groups: {e}')
     if message.text == button_settings:
-        value_msg = bot.send_message(message.chat.id, 'TEST4')
+        print(message.chat.id)
+        print('+++++++++++++++++++++++++++++++++++++++++++++++++++++++++')
+        data_usage.insert_settings(message.chat.id)
+        data_usage.check_db()
     if message.text == button_help:
         value_msg = bot.send_message(message.chat.id, 'TEST5')
     if message.text == button_groups:
         produce_groups(message)
     if message.text == button_locations:
-        #TODO remove from here and add to the new values
-        # value_list = data_usage.get_user_coordinate(message.chat.id, 1)
-        # produce_location_show(message.chat.id, value_list)
         value_name, value_id, _ = data_usage.get_user_coordinates(message.chat.id)
         value_id = telegram_manager.reconfigure_list_sublists(value_id, value_limit_locations)
         value_name = telegram_manager.reconfigure_list_sublists(value_name, value_limit_locations)

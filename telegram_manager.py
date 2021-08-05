@@ -28,6 +28,7 @@ from config import (bot_key,
                     command_name_location_add,
                     command_name_location_edit)
 
+
 class TelegramManager:
     """
     class which is dedicated to manage some values
@@ -163,10 +164,10 @@ class TelegramManager:
             return f"{value_id}{sep}{value_index}{sep}{value_len}"
         if value_type == callback_delete_loc:
             sep = callback_sep_loc_del
-            return f"{value_id}{sep}{value_index}{sep}{value_len}{sep}{value_group}"
+            return f"{value_id}{sep}{value_index}"
         if value_type == callback_show_loc:
             sep = callback_sep_loc_show
-            return f"{value_id}{sep}{value_index}{sep}{value_len}{sep}{value_group}"
+            return f"{value_id}{sep}{value_index}"
 
     @staticmethod
     def check_index_inserted(value_index:str, value_len:int) -> int:

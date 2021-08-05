@@ -6,10 +6,15 @@ from telegram_manager import TelegramManager
 from config import (name_db,
                     value_limit,
                     folder_config,
+                    entrance_bot_usage,
+                    name_loc_default,
+                    value_message_default,
+                    value_message_selection_default,
                     table_users,
                     table_groups,
                     table_locations,
                     table_users_groups,
+                    table_users_settings,
                     table_users_locations)
 
 
@@ -46,6 +51,9 @@ class DataUsage:
         c = self.cursor.execute(f'SELECT * from {table_users_groups};').fetchall()
         print(c)
         print('#################################################')
+        d = self.cursor.execute(f"SELECT * FROM {table_users_settings};").fetchall()
+        print(d)
+        print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
         
     def create_connection(self) -> None:
         """
@@ -116,17 +124,27 @@ class DataUsage:
             msg = f'We found problems with checking values of the previous insertion, mistake: {e}'
             self.proceed_error(msg)
 
-    def get_user_groups(self, id_chat:int) -> set:
+    def get_user_groups(self, id_chat:int, id_limit:int=0) -> set:
         """
         Method which is dedicated to return values of the groups and group names
         Input:  id_chat = id of the chat which was using this feature
         Output: set with lists of the values with the groups and names
         """
         try:
-            a = 1
+            if id_limit:
+                value_groups = self.cursor.execute(f"SELECT id_group FROM {table_users_groups} WHERE id_user={id_chat} LIMIT {id_limit};").fetchall()
+                print(value_groups)
+                print('---------------------------------------------')
+            else:
+                value_groups = self.cursor.execute(f"SELECT id_group FROM {table_users_groups} WHERE id_user={id_chat};").fetchall()
+                print(value_groups)
+                print('=============================================')
+            value_groups = []
+            return value_groups
         except Exception as e:
             msg = f"We found problems with returning groups to values, mistake: {e}"
             self.proceed_error(msg)
+            return []
 
     def get_user_coordinate(self, id_chat:int, id_location:int) -> list:
         """
@@ -138,12 +156,28 @@ class DataUsage:
         try:
             #TODO add check on the checking the coordinates
             value_list = self.cursor.execute(f"SELECT * FROM {table_locations} WHERE id={id_location};").fetchone()
-            print(value_list)
-            print('#################################################################')
-            return value_list
+            if value_list:
+                return value_list
+            return []
         except Exception as e:
             msg = f"We found problems with returning elected coordinate to the selected user, mistake: {e}"
+            self.proceed_error(msg)
             return []
+
+    def delete_location_user(self, id_chat:int, id_location:int) -> None:
+        """
+        Method which is dedicated to delete location from the
+        Input:  id_chat = chat id value
+                id_location = id of the location for the user
+        Output: We successfully deleted values of the location
+        """
+        try:
+            self.cursor.execute(f"DELETE FROM {table_users_locations} WHERE id_user={id_chat} AND id_location={id_location};")
+            self.cursor.execute(f"DELETE FROM {table_locations} WHERE id={id_location};")
+            self.connection.commit()
+        except Exception as e:
+            msg = f'We faced problems with the deleting locations from the database. Mistake: {e}'
+            self.proceed_error(msg)
 
     def get_group_values(self, group_id:int, group_name:str) -> bool:
         """
@@ -175,7 +209,7 @@ class DataUsage:
         try:
             return self.cursor.execute(f"SELECT MAX(id) FROM {table_locations};").fetchone()
         except Exception as e:
-            msg = 'We faced some problems with the getting last id value'
+            msg = f'We faced some problems with the getting last id value. Mistake: {e}'
             self.proceed_error(msg)
             return -1
 
@@ -190,6 +224,7 @@ class DataUsage:
         """
         try:
             id_user, username, name_first, name_last = id_list
+            self.insert_settings(id_user)
             if not self.get_user_values(id_user):
                 self.insert_username(id_user, username, name_first, name_last)
             self.cursor.execute(f"INSERT INTO {table_locations} (name_location, latitude, longitude) VALUES (?, ?, ?);", 
@@ -288,6 +323,7 @@ class DataUsage:
         Output: we successfully inserted values of the group
         """
         try:
+            self.insert_settings(id_user)
             if not self.get_user_values(id_user):
                 self.insert_username(id_user, username, name_first, name_last)
             if not self.get_group_values(group_id, group_name):
@@ -316,7 +352,24 @@ class DataUsage:
             self.connection.commit()
             return True
         except Exception as e:
-            msg = 'We faced problem with inserting values within the database'
+            msg = f'We faced problem with inserting values within the database. Mistake: {e}'
+            self.proceed_error(msg)
+            return False
+
+    def insert_settings(self, id_user:int) -> bool:
+        """
+        Method which is dedicated to insert the values to the 
+        Input:  id_user = user id value which requires for that
+        Output: boolean value which signifies that everything 
+        """
+        try:
+            value_check = self.cursor.execute(f"SELECT id_user FROM {table_users_settings} WHERE id_user={id_user};").fetchone()
+            if not value_check:
+                self.cursor.execute(f"INSERT INTO {table_users_settings}(id_user) VALUES ({id_user});")
+                self.connection.commit()
+            return True
+        except Exception as e:
+            msg = f'We faced problem with inserted settings to the user. Mistake: {e}'
             self.proceed_error(msg)
             return False
 
@@ -337,7 +390,6 @@ class DataUsage:
         except Exception as e:
             msg = f"We have problems with getting coordinates for the users. Mistake: {e}"
             self.proceed_error(msg)
-            print('=================================================')
             return [], [], False
 
     def produce_values(self) -> None:
@@ -393,6 +445,19 @@ class DataUsage:
                     FOREIGN KEY (id_location) REFERENCES {table_locations} (id)
                         ON DELETE CASCADE 
                         ON UPDATE NO ACTION
+                );""")
+            self.cursor.execute(f"""
+                CREATE TABLE IF NOT EXISTS {table_users_settings}(
+                    id_user INTEGER PRIMARY KEY,
+                    text_sending TEXT DEFAULT '{entrance_bot_usage}',
+                    text_minutes INTEGER DEFAULT {value_message_default},
+                    name_default TEXT DEFAULT '{name_loc_default}',
+                    name_default_boolean BOOLEAN DEFAULT TRUE,
+                    name_default_audio TEXT,
+                    audio_boolean BOOLEAN DEFAULT FALSE,
+                    name_default_video TEXT,
+                    video_boolean BOOLEAN DEFAULT FALSE,
+                    message_priority INTEGER DEFAULT {value_message_selection_default}
                 );""")
             self.connection.commit()
         else:
