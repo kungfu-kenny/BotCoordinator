@@ -62,10 +62,10 @@ def produce_location_show(value_user:int, value_list:list) -> None:
     if value_list:
         *_, value_latitude, value_longitude = value_list
         value_loc = bot.send_location(value_user, value_latitude, value_longitude, disable_notification=False)
-        bot.reply_to(value_loc, telegram_manager.produce_message_for_location(value_list))
+        bot.reply_to(value_loc, telegram_manager.produce_message_for_location(value_list), parse_mode='Markdown')
     else:
-        msg = "Unfortunatelly, you have removed this location from the database"
-        bot.send_message(value_user, msg)
+        msg = "Unfortunatelly, you have ***removed*** this location from the database"
+        bot.send_message(value_user, msg, parse_mode='Markdown')
 
 def produce_location_delete(value_user:int, value_list:list) -> None:
     if value_list:
@@ -74,8 +74,8 @@ def produce_location_delete(value_user:int, value_list:list) -> None:
         bot.send_message(value_user, msg, disable_notification=False)
         data_usage.delete_location_user(value_user, value_id)
     else:
-        msg = "You have already removed this location previously"
-        bot.send_message(value_user, msg, disable_notification=False)
+        msg = "You have already ***removed*** this location previously"
+        bot.send_message(value_user, msg, disable_notification=False, parse_mode='Markdown')
 
 def produce_settings_show():
     """
@@ -138,6 +138,7 @@ def produce_reply_groups(message:object, value_list:list, value_list_name:list, 
     keyboard_group_reply = InlineKeyboardMarkup()
     button_group_middle = f'{value_index+1}/{len(value_list)}'
     for i, j in zip(value_list[value_index], value_list_name[value_index]):
+        # value_callback_del = telegram_manager.make_callback_values(callback_delete_loc, message.chat.id, i)
         keyboard_group_reply.row(InlineKeyboardButton(i, callback_data='1'), 
                                 InlineKeyboardButton(j, callback_data='1'),
                                 # telebot.types.InlineKeyboardButton(text="link", url="https://google.com"),
@@ -316,9 +317,10 @@ def calculate_answer_on_the_buttons(query):
         return
 
     if data == callback_sep_group_mine:
-        value_test = [['1', '2'], ['3', '4']] #TODO make values on the usage
-        value_test_name = [['One', 'Two'], ['3', '4']]
-        produce_reply_groups(query.message, value_test, value_test_name, 0)
+        value_id, value_name = data_usage.return_group_values(query.message.chat.id)
+        value_id = telegram_manager.reconfigure_list_sublists(value_id)
+        value_name = telegram_manager.reconfigure_list_sublists(value_name)
+        produce_reply_groups(query.message, value_id, value_name, 0)
         return
 
     if callback_sep_loc_show in data:

@@ -200,6 +200,24 @@ class DataUsage:
             self.proceed_error(msg)
             return False
 
+    def return_group_values(self, id_user:int) -> set:
+        """
+        Method which is dedicated to return for the user group values
+        Input:  id_user = id of the selected user
+        Output: list of lists with the 
+        """
+        try:
+            value_list_id = self.cursor.execute(f"SELECT id_group FROM {table_users_groups} WHERE id_user={id_user};").fetchall()
+            if not value_list_id:
+                return [], []
+            value_list_id = ','.join([str(v[0]) for v in value_list_id])
+            value_list_group = self.cursor.execute(f"SELECT id, name FROM {table_groups} WHERE id IN ({value_list_id});").fetchall()
+            return [v[0] for v in value_list_group], [v[1] for v in value_list_group]
+        except Exception as e:
+            msg = f"We faced problems with getting values of the groups to the user; Mistake: {e}"
+            self.proceed_error(msg)
+            return [], []
+
     def get_current_id(self) -> int:
         """
         Method which is dedicated to manually return values from the database manually

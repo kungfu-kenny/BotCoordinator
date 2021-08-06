@@ -206,8 +206,12 @@ class TelegramManager:
         Input:  value_list = list with latitude, longitude, name
         Output: string with values ti return for the user
         """
-        #TODO add this change later
-        return 'Check'
+        value_id, value_name, value_latitude, value_longitude = value_list
+        msg_id = f"___ID___: ***{value_id}***"
+        msg_name = f"___Name___: ***{value_name}***"
+        msg_latitude = f"___Latitude___: ***{value_latitude}***"
+        msg_longitude = f"___Longitude___: ***{value_longitude}***"
+        return '\n'.join([msg_id, msg_name, msg_latitude, msg_longitude])
 
     def produce_check_values(self, presence_chat:bool, presence_group:bool, chat_id:int) -> set:
         """
