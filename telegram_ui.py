@@ -19,15 +19,20 @@ from config import (button_help,
                     button_groups_mine_text,
                     button_groups_mine_prev,
                     button_groups_mine_next,
+                    button_groups_mine_check,
                     chat_id_default,
                     entrance_groups_list,
                     entrance_bot_usage,
                     entrance_update_bad,
                     entrance_update_good,
+                    entrance_bot_check_true,
+                    entrance_bot_check_false,
+                    entrance_bot_check_group,
                     callback_next_loc,
                     callback_show_loc,
                     callback_delete_loc,
                     callback_next_group,
+                    callback_check_group,
                     callback_delete_group,
                     callback_sep_addloc,
                     callback_sep_loc_del,
@@ -49,6 +54,25 @@ user_profiler = UserProfiler()
 telegram_manager = TelegramManager()
 markup_test = telegram_manager.return_reply_keyboard()
 
+
+def make_deletion_check_group(id_user:int, id_group:int, send_message:bool=False) -> bool:
+    """
+    Function which is dedicated to make the test of the deletion from the 
+    Input:  id_user = id value which we require to test
+            id_group = group which is require to check
+    """
+    try:
+        new_message = bot.send_message(id_group, entrance_bot_check_group)
+        bot.delete_message(new_message)
+        if send_message:
+            bot.send_message(id_user, entrance_bot_check_true)
+        return True
+    except Exception as e:
+        if send_message:
+            bot.send_message(id_user, entrance_bot_check_false)
+        msg = f"We faced problems with the value; Mistake: {e}"
+        bot.send_message(chat_id_default, msg)
+        return False
 
 def make_lambda_check() -> bool:
     try:
@@ -138,11 +162,13 @@ def produce_reply_groups(message:object, value_list:list, value_list_name:list, 
     keyboard_group_reply = InlineKeyboardMarkup()
     button_group_middle = f'{value_index+1}/{len(value_list)}'
     for i, j in zip(value_list[value_index], value_list_name[value_index]):
-        # value_callback_del = telegram_manager.make_callback_values(callback_delete_loc, message.chat.id, i)
+        value_callback_del = telegram_manager.make_callback_values(callback_delete_group, message.chat.id, i)
+        value_callback_check = telegram_manager.make_callback_values(callback_check_group, message.chat.id, i)
         keyboard_group_reply.row(InlineKeyboardButton(i, callback_data='1'), 
                                 InlineKeyboardButton(j, callback_data='1'),
                                 # telebot.types.InlineKeyboardButton(text="link", url="https://google.com"),
-                                InlineKeyboardButton(button_groups_mine_del, callback_data='12'))
+                                InlineKeyboardButton(button_groups_mine_check, callback_data=value_callback_check),
+                                InlineKeyboardButton(button_groups_mine_del, callback_data=value_callback_del))
     keyboard_group_reply.row(InlineKeyboardButton(button_groups_mine_prev, callback_data=value_index_prev), 
                             InlineKeyboardButton(button_group_middle, callback_data='1'),
                             InlineKeyboardButton(button_groups_mine_next, callback_data=value_index_next))
@@ -281,18 +307,13 @@ def calculate_answer_on_the_buttons(query):
         bot.send_message(query.message.chat.id, message_print)
         return
 
+    #TODO work here!
     if callback_sep_group_upd in data:
-        value_id, value_index, value_len, value_group = data.split(callback_sep_group_upd)
-        value_id, value_index, value_len, value_group = int(value_id), int(value_index), int(value_len), int(value_group)
+        value_id, value_group = data.split(callback_sep_group_upd)
+        value_id, value_group = int(value_id), int(value_group)
         #TODO make values on the usage
-        value_id = [['1', '2'], ['3', '4']] 
-        value_name = [['One', 'Two'], ['3', '4']]
-        print(value_id, value_index, value_len)
-        value_index = telegram_manager.check_index_inserted(value_index, value_len)
-        print(value_id, value_index, value_len)
+        print(value_id, value_group)
         print('**********************************************************')
-        if value_len > 1:
-            produce_reply_groups_edit(query.message, value_id, value_name, value_index)
         return
 
     if callback_sep_group_next in data:

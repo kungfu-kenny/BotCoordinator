@@ -16,6 +16,7 @@ from config import (bot_key,
                     chat_id_default,
                     callback_show_loc,
                     callback_next_loc,
+                    callback_check_group,
                     callback_delete_loc,
                     callback_next_group,
                     callback_delete_group,
@@ -25,6 +26,7 @@ from config import (bot_key,
                     callback_sep_loc_next,
                     callback_sep_group_upd,
                     callback_sep_group_next,
+                    callback_sep_group_check,
                     command_name_location_add,
                     command_name_location_edit)
 
@@ -158,7 +160,7 @@ class TelegramManager:
             return f"{value_id}{sep}{value_index}{sep}{value_len}"
         if value_type == callback_delete_group:
             sep = callback_sep_group_upd
-            return f"{value_id}{sep}{value_index}{sep}{value_len}{sep}{value_group}"
+            return f"{value_id}{sep}{value_index}"
         if value_type == callback_next_loc:
             sep = callback_sep_loc_next
             return f"{value_id}{sep}{value_index}{sep}{value_len}"
@@ -167,6 +169,9 @@ class TelegramManager:
             return f"{value_id}{sep}{value_index}"
         if value_type == callback_show_loc:
             sep = callback_sep_loc_show
+            return f"{value_id}{sep}{value_index}"
+        if value_type == callback_check_group:
+            sep = callback_sep_group_check
             return f"{value_id}{sep}{value_index}"
 
     @staticmethod

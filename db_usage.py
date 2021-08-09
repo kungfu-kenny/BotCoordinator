@@ -15,6 +15,7 @@ from config import (name_db,
                     table_locations,
                     table_users_groups,
                     table_users_settings,
+                    table_groups_selected,
                     table_users_locations)
 
 
@@ -302,9 +303,16 @@ class DataUsage:
             self.proceed_error(msg)
             return False
 
-    def disconnect_user_group(self, id_user, id_group) -> bool:
+    def disconnect_user_group(self, id_user, id_group) -> set:
+        """
+        Method which is dedicated to remove connections between user and group
+        Input:  id_user = value of the user id
+                id_group = value of the group id
+        Output: boolean value which signifies that we need to make further check and bool that all is okay
+        """
         try:
-            self.cursor.execute(f"DELETE INTO {table_users_groups} WHERE id_user={id_user} AND id_group={id_group};")
+            check_value = 1
+            # self.cursor.execute(f"DELETE FROM {table_users_groups} WHERE id_user={id_user} AND id_group={id_group};")
             self.connection.commit()
             return True
         except Exception as e:
@@ -442,6 +450,18 @@ class DataUsage:
                 );""")
             self.cursor.execute(f""" 
                 CREATE TABLE IF NOT EXISTS {table_users_groups}(
+                    id_user INTEGER,
+                    id_group INTEGER,
+                    PRIMARY KEY (id_user, id_group),
+                    FOREIGN KEY (id_user) REFERENCES {table_users} (id)
+                        ON DELETE CASCADE 
+                        ON UPDATE NO ACTION,
+                    FOREIGN KEY (id_group) REFERENCES {table_groups} (id)
+                        ON DELETE CASCADE 
+                        ON UPDATE NO ACTION
+                );""")
+            self.cursor.execute(f"""
+                CREATE TABLE IF NOT EXISTS {table_groups_selected}(
                     id_user INTEGER,
                     id_group INTEGER,
                     PRIMARY KEY (id_user, id_group),

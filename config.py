@@ -17,6 +17,7 @@ table_groups = 'groups'
 table_users_settings = 'users_settings'
 table_users_locations = 'users_locations'
 table_users_groups = 'users_groups'
+table_groups_selected = 'groups_selected'
 
 callback_sep_set = "⚙️"
 callback_sep_sup = "💰" 
@@ -33,15 +34,17 @@ callback_sep_loc_del = 'z'
 callback_sep_loc_next = "l"
 callback_sep_group_upd = "u"
 callback_sep_group_next = "x"
+callback_sep_group_check = "c"
 
 button_location_show = "Show 📍"
 button_groups_mine_del = '❌'
+button_groups_mine_check = 'Check ❔'
 button_groups_mine_prev = '⬅️'
 button_groups_mine_next = '➡️'
 button_groups_mine_text = 'All added groups:'
 
 button_update = 'Update 🔄'
-button_help = 'Help ❔'
+button_help = 'Help ❓'
 button_settings = 'Settings ⚙️'
 button_support = "Support 💰"
 button_locations = 'Locations 🌐'
@@ -57,6 +60,9 @@ entrance_values = "Welcome to the Group Management"
 entrance_bot_usage = "Niko, let\'s go bowling"
 entrance_bot_img_name = 'roman.jpg'
 entrance_bot_img_link = os.getenv('IMG_ROMAN')
+entrance_bot_check_group = "This is a test message for chck that bot is abandonded here"
+entrance_bot_check_true = 'Group is fully functioning, everything is okay'
+entrance_bot_check_false = "Unfortunatelly, this group is not working properly. We recommend you to remove group from the list"
 entrance_update_good = "We successfully synchronized values of the groups hich you added to the bot"
 entrance_update_bad = "Unfortunatelly, faced some problems with adding groups to database"
 entrance_groups_list = 'Select what to do with groups:'
@@ -64,7 +70,6 @@ entrance_groups_list = 'Select what to do with groups:'
 command_name_start = 'start'
 command_name_location_add = 'add_location_name'
 command_name_location_edit = 'edit_location_name'
-
 command_name_group_update = 'edit_group_value'
 
 value_limit = 10
@@ -79,3 +84,4 @@ callback_delete_group = 'update_group_list'
 callback_next_loc = 'next_loc_list'
 callback_delete_loc = 'update_loc_list'
 callback_show_loc = 'show_loc_list'
+callback_check_group = 'check_group_val'
