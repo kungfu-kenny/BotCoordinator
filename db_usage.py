@@ -303,7 +303,22 @@ class DataUsage:
             self.proceed_error(msg)
             return False
 
-    def disconnect_user_group(self, id_user, id_group) -> set:
+    def disconnect_whole_group(self, id_group:int) -> bool:
+        """
+        Method which is dedicated to remove whole group from the 
+        Input:  id_group = id in the groups table
+        Output: bool which signifies that we successfully removed all values
+        """
+        try:
+            self.cursor.execute(f"DELETE FROM {table_groups} WHERE id={id_group};")
+            self.connection.commit()
+            return True
+        except Exception as e:
+            msg = f"We found problems with deletion of the whole group from the {table_groups} in database. Mistake: {e}"
+            self.proceed_error(msg)
+            return False
+
+    def disconnect_user_group(self, id_user:int, id_group:int) -> set:
         """
         Method which is dedicated to remove connections between user and group
         Input:  id_user = value of the user id
@@ -311,14 +326,20 @@ class DataUsage:
         Output: boolean value which signifies that we need to make further check and bool that all is okay
         """
         try:
-            check_value = 1
-            # self.cursor.execute(f"DELETE FROM {table_users_groups} WHERE id_user={id_user} AND id_group={id_group};")
-            self.connection.commit()
-            return True
+            check_value = self.cursor.execute(f"SELECT COUNT(id_user) FROM {table_users_groups} WHERE id_group={id_group};").fetchone()
+            check_value = check_value[0] if check_value else 0
+            if check_value:
+                self.cursor.execute(f"DELETE FROM {table_users_groups} WHERE id_user={id_user} AND id_group={id_group};")
+                self.connection.commit() 
+                if check_value == 1:
+                    return True, True, True
+                return True, False, True
+            else:
+                return True, False, False
         except Exception as e:
             msg = f'We have problems with the connection deletion between user and group. Mistake: {e}'
             self.proceed_error(msg)
-            return False
+            return False, False, False
 
     def check_user_group_connection(self, id_group:int, id_user:int) -> bool:
         """

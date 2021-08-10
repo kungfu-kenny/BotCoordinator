@@ -41,6 +41,7 @@ from config import (button_help,
                     callback_sep_group_upd,
                     callback_sep_group_next,
                     callback_sep_group_mine,
+                    callback_sep_group_check,
                     callback_sep_group_search,
                     value_limit_locations,
                     command_name_start,
@@ -54,25 +55,6 @@ user_profiler = UserProfiler()
 telegram_manager = TelegramManager()
 markup_test = telegram_manager.return_reply_keyboard()
 
-
-def make_deletion_check_group(id_user:int, id_group:int, send_message:bool=False) -> bool:
-    """
-    Function which is dedicated to make the test of the deletion from the 
-    Input:  id_user = id value which we require to test
-            id_group = group which is require to check
-    """
-    try:
-        new_message = bot.send_message(id_group, entrance_bot_check_group)
-        bot.delete_message(new_message)
-        if send_message:
-            bot.send_message(id_user, entrance_bot_check_true)
-        return True
-    except Exception as e:
-        if send_message:
-            bot.send_message(id_user, entrance_bot_check_false)
-        msg = f"We faced problems with the value; Mistake: {e}"
-        bot.send_message(chat_id_default, msg)
-        return False
 
 def make_lambda_check() -> bool:
     try:
@@ -100,6 +82,26 @@ def produce_location_delete(value_user:int, value_list:list) -> None:
     else:
         msg = "You have already ***removed*** this location previously"
         bot.send_message(value_user, msg, disable_notification=False, parse_mode='Markdown')
+
+def make_deletion_check_group(id_user:int, id_group:int, send_message:bool=False) -> bool:
+    """
+    Function which is dedicated to make the test of the deletion from the 
+    Input:  id_user = id value which we require to test
+            id_group = group which is require to check
+    Output: we check group that we can produce message
+    """
+    try:
+        new_message = bot.send_message(id_group, entrance_bot_check_group)
+        bot.delete_message(id_group, new_message.id)
+        if send_message:
+            bot.send_message(id_user, entrance_bot_check_true)
+        return True
+    except Exception as e:
+        if send_message:
+            bot.send_message(id_user, entrance_bot_check_false)
+        msg = f"We faced problems with the value; Mistake: {e}"
+        bot.send_message(chat_id_default, msg)
+        return False
 
 def produce_settings_show():
     """
@@ -307,23 +309,40 @@ def calculate_answer_on_the_buttons(query):
         bot.send_message(query.message.chat.id, message_print)
         return
 
-    #TODO work here!
+    if callback_sep_group_check in data:
+        value_id, value_group = data.split(callback_sep_group_check)
+        value_id, value_group = int(value_id), int(value_group)
+        make_deletion_check_group(value_id, value_group, True)
+        return
+
+    #TODO add here disconnect
     if callback_sep_group_upd in data:
         value_id, value_group = data.split(callback_sep_group_upd)
         value_id, value_group = int(value_id), int(value_group)
-        #TODO make values on the usage
-        print(value_id, value_group)
-        print('**********************************************************')
+        check_working, check_further, check_nonremoved = data_usage.disconnect_user_group(value_id, value_group)
+        if check_working:
+            if not check_nonremoved:
+                bot.send_message(value_id, f"Group with id of `{value_group}` was previously removed; you need to check it", parse_mode='Markdown')
+            if check_further:
+                value_check_usage = make_deletion_check_group(value_id, value_group)
+                if not value_check_usage:
+                    #TODO add here full deletion of values
+                    # data_usage.disconnect_whole_group(value_group)
+                    pass
+        else:
+            bot.send_message(chat_id_default, f'We faced problem with removing groups; Check SQL code later')
         return
 
     if callback_sep_group_next in data:
         value_id, value_index, value_len = data.split(callback_sep_group_next)
         value_id, value_index, value_len = int(value_id), int(value_index), int(value_len)
-        value_id_ = [['1', '2'], ['3', '4']] 
-        value_name = [['One', 'Two'], ['3', '4']]
+        
+        values_id, values_name = data_usage.return_group_values(value_id)
+        values_id = telegram_manager.reconfigure_list_sublists(values_id)
+        values_name = telegram_manager.reconfigure_list_sublists(values_name)
         value_index = telegram_manager.check_index_inserted(value_index, value_len)
         if value_len > 1:
-            produce_reply_groups_edit(query.message, value_id_, value_name, value_index)
+            produce_reply_groups_edit(query.message, values_id, values_name, value_index)
         return
 
     if callback_sep_loc_next in data:
