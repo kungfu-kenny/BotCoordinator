@@ -53,7 +53,6 @@ from config import (button_help,
 data_usage = DataUsage()
 user_profiler = UserProfiler()
 telegram_manager = TelegramManager()
-markup_test = telegram_manager.return_reply_keyboard()
 
 
 def make_lambda_check() -> bool:
@@ -103,12 +102,15 @@ def make_deletion_check_group(id_user:int, id_group:int, send_message:bool=False
         bot.send_message(chat_id_default, msg)
         return False
 
-def produce_settings_show():
+#TODO work here!
+def produce_settings_show(value_user:int, value_list:list) -> None:
     """
-    Function to test values
+    Produce the settings values for the user
+    Input:  value_user = id for the callback
+            value_list = list of the settings
+    Output: produced values of the settings
     """
-    #TODO main check that for showing values for the values
-    pass
+    keyboard_user_settings = InlineKeyboardMarkup()
 
 def produce_groups(message):
     keyboard_group_choice = InlineKeyboardMarkup()
@@ -160,7 +162,6 @@ def produce_reply_groups(message:object, value_list:list, value_list_name:list, 
     """
     value_index_next = telegram_manager.make_callback_values(callback_next_group, message.chat.id, value_index+1, len(value_list))
     value_index_prev = telegram_manager.make_callback_values(callback_next_group, message.chat.id, value_index-1, len(value_list))
-    #TODO add values for the creating the callbacks
     keyboard_group_reply = InlineKeyboardMarkup()
     button_group_middle = f'{value_index+1}/{len(value_list)}'
     for i, j in zip(value_list[value_index], value_list_name[value_index]):
@@ -285,15 +286,14 @@ def calculate_answer_on_the_buttons(query):
         new_chat_name_last = query.message.chat.last_name
         new_chat_name_user = query.message.chat.username
         
-        a = False #TODO change here
-        if a: #TODO we add new table in the database
+        boolean_default_name = data_usage.return_user_name_default_bool(new_chat_id)
+        if boolean_default_name:
             message_print = "Unfortunatelly, u didn't added default name feature, so u need to type the name with a command: "+\
                             f"/{command_name_location_add}: <name which you have selected>\n" +\
                             "Also, u can just include the autoname injection"
             bot.send_message(new_chat_id, message_print)
         else:
-            #TODO add here values to the databases, database was successfully created after it
-            new_name = 'Name Default' #TODO change values
+            new_name = data_usage.return_user_name_settings(new_chat_id)
             value_coordinates, _, value_limit = data_usage.get_user_coordinates(new_chat_id)
             if not value_limit:
                 bot.reply_to(query.message, "You have surpassed the limit of the values")
@@ -315,7 +315,6 @@ def calculate_answer_on_the_buttons(query):
         make_deletion_check_group(value_id, value_group, True)
         return
 
-    #TODO add here disconnect
     if callback_sep_group_upd in data:
         value_id, value_group = data.split(callback_sep_group_upd)
         value_id, value_group = int(value_id), int(value_group)
@@ -326,9 +325,7 @@ def calculate_answer_on_the_buttons(query):
             if check_further:
                 value_check_usage = make_deletion_check_group(value_id, value_group)
                 if not value_check_usage:
-                    #TODO add here full deletion of values
-                    # data_usage.disconnect_whole_group(value_group)
-                    pass
+                    data_usage.disconnect_whole_group(value_group)
         else:
             bot.send_message(chat_id_default, f'We faced problem with removing groups; Check SQL code later')
         return
@@ -396,12 +393,13 @@ def send_test_message_check(message):
             bot.send_message(message.chat.id, entrance_update_bad)
             bot.send_message(chat_id_default, f'We faced problem with updating groups: {e}')
     if message.text == button_settings:
-        print(message.chat.id)
-        print('+++++++++++++++++++++++++++++++++++++++++++++++++++++++++')
         data_usage.insert_settings(message.chat.id)
-        data_usage.check_db()
+        user_id, user_text, user_minutes, username_def, username_bool, *_ = data_usage.return_user_settings(message.chat.id)
+        user_list = [user_id, user_text, user_minutes, username_def, bool(username_bool)] 
+        #TODO add here values for the change
     if message.text == button_help:
-        value_msg = bot.send_message(message.chat.id, 'TEST5')
+        bot.send_message(message.chat.id, 'TEST5')
+        data_usage.check_db()
     if message.text == button_groups:
         produce_groups(message)
     if message.text == button_locations:

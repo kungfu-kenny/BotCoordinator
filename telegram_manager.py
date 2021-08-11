@@ -7,6 +7,8 @@ from telegram_bot import bot
 from config import (bot_key, 
                     const,
                     separator, 
+                    button_absent,
+                    button_present,
                     button_help, 
                     button_update,
                     button_groups,
@@ -89,6 +91,15 @@ class TelegramManager:
         value_parsed = [v.split(separator) for v in list(set(value_parsed))]
         value_parsed = [[int(v[0]), v[1], int(v[2]), v[3], v[4], v[5]] for v in value_parsed]
         return value_parsed
+
+    @staticmethod
+    def manage_additional_values(value_bool:bool) -> str:
+        """
+        Static method for the giving new values of the 
+        Input:  value_bool = boolean values
+        Output: string for the menu
+        """
+        return button_present if value_bool else button_absent
 
     @staticmethod
     def manage_added_name(value_string:str) -> set:

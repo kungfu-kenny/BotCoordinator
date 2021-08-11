@@ -403,6 +403,57 @@ class DataUsage:
             self.proceed_error(msg)
             return False
 
+    def return_user_name_default_bool(self, id_user:int) -> bool:
+        """
+        Method to return values for the 
+        Input:  id_user = user id from the telegram
+        Output: boolean value for this values
+        """
+        try:
+            name_default_boolean = self.cursor.execute(f"SELECT name_default_boolean FROM {table_users_settings} WHERE id_user={id_user};").fetchone()
+            if not name_default_boolean:
+                self.insert_settings(id_user)
+                return self.return_user_name_default_bool(id_user)
+            return bool(name_default_boolean[0])
+        except Exception as e:
+            msg = f"We faced problems with the work of the setting to the users. Mistake: {e}"
+            self.proceed_error(msg)
+            return False
+
+    def return_user_name_settings(self, id_user:int) -> str:
+        """
+        Method which is dedicated to return default location name
+        Input:  id_user = user id
+        Output: string of the default name
+        """
+        try:
+            name_default = self.cursor.execute(f"SELECT name_default FROM {table_users_settings} WHERE id_user={id_user};").fetchone()
+            if not name_default:
+                self.insert_settings(id_user)
+                return self.return_user_name_settings(id_user)
+            return name_default[0]
+        except Exception as e:
+            msg = f"We faced problems with return default name. Mistake: {e}"
+            self.proceed_error(msg)
+            return name_loc_default
+
+    def return_user_settings(self, id_user:int) -> list:
+        """
+        Method which is dedicated to 
+        Input:  id_user = id from the telebot
+        Output: list with all values of the user's settings
+        """
+        try:
+            value_settings = self.cursor.execute(f"SELECT * FROM {table_users_settings} WHERE id_user={id_user};").fetchone()
+            if not value_settings:
+                self.insert_settings(id_user)
+                return self.return_user_settings(id_user)
+            return value_settings
+        except Exception as e:
+            msg = f"We faced problems with the work of the setting to the users. Mistake: {e}"
+            self.proceed_error(msg)
+            return []
+
     def insert_settings(self, id_user:int) -> bool:
         """
         Method which is dedicated to insert the values to the 

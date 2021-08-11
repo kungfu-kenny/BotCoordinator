@@ -50,6 +50,9 @@ button_support = "Support 💰"
 button_locations = 'Locations 🌐'
 button_groups = 'Groups 🎻'
 
+button_present = '✅'
+button_absent = '❌'
+
 button_location_add = "Add location"
 button_location_send = "Resend location"
 
