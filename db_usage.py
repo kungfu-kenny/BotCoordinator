@@ -420,6 +420,21 @@ class DataUsage:
             self.proceed_error(msg)
             return False
 
+    def update_user_settings_default_name(self, id_user:int) -> None:
+        """
+        Method which is dedicated to change the possibility of the default name
+        Input:  id_user = id of all possible users between there
+        Output: Non, but the boolean value was successfully inserted
+        """
+        try:
+            value_selected = self.return_user_name_default_bool(id_user)
+            value_bool_new = True if not value_selected else False
+            self.cursor.execute(f"UPDATE {table_users_settings} SET name_default_boolean={value_bool_new} WHERE id_user={id_user};")
+            self.connection.commit()
+        except Exception as e:
+            msg = f"We faced problems with the changing of the default name usage. Mistake: {e}"
+            self.proceed_error(msg)
+
     def return_user_name_settings(self, id_user:int) -> str:
         """
         Method which is dedicated to return default location name
@@ -480,7 +495,7 @@ class DataUsage:
         try:
             list_id = self.cursor.execute(f"SELECT id_location FROM {table_users_locations} WHERE id_user={id};").fetchall()
             if not list_id:
-                return [], True
+                return [], [], True
             list_id = [str(l[0]) for l in list_id]
             value_str = ','.join(list_id)
             value_list = self.cursor.execute(f"SELECT name_location from {table_locations} WHERE id IN ({value_str});").fetchall()
@@ -489,6 +504,23 @@ class DataUsage:
             msg = f"We have problems with getting coordinates for the users. Mistake: {e}"
             self.proceed_error(msg)
             return [], [], False
+
+    def get_length_settings(self, id_user:int) -> set:
+        """
+        Method which is dedicated to return values 
+        Input:  id_user = id of the user
+        Output: we returned values of length of the values
+        """
+        try:
+            value_id_loc = self.cursor.execute(f"SELECT COUNT(*) FROM {table_users_locations} WHERE id_user={id_user};").fetchone()
+            value_id_group = self.cursor.execute(f"SELECT COUNT(*) FROM {table_users_groups} WHERE id_user={id_user};").fetchone()
+            if not value_id_loc and not value_id_group:
+                return 0, 0
+            return value_id_loc[0], value_id_group[0]
+        except Exception as e:
+            msg = f"We found problem with the getting lengthes of the locations and groups of the users. Mistake: {f}"
+            self.proceed_error(msg)
+            return 0, 0
 
     def produce_values(self) -> None:
         """
@@ -559,7 +591,7 @@ class DataUsage:
             self.cursor.execute(f"""
                 CREATE TABLE IF NOT EXISTS {table_users_settings}(
                     id_user INTEGER PRIMARY KEY,
-                    text_sending TEXT DEFAULT '{entrance_bot_usage}',
+                    text_sending TEXT DEFAULT "{entrance_bot_usage}",
                     text_minutes INTEGER DEFAULT {value_message_default},
                     name_default TEXT DEFAULT '{name_loc_default}',
                     name_default_boolean BOOLEAN DEFAULT TRUE,

@@ -28,6 +28,7 @@ from config import (button_help,
                     entrance_bot_check_true,
                     entrance_bot_check_false,
                     entrance_bot_check_group,
+                    entrance_locations_absent,
                     callback_next_loc,
                     callback_show_loc,
                     callback_delete_loc,
@@ -201,10 +202,14 @@ def produce_reply_groups_edit(message:object, value_list:list, value_list_name:l
                             InlineKeyboardButton(button_groups_mine_next, callback_data=value_index_next))
     bot.edit_message_reply_markup(message.chat.id, message.id, button_groups_mine_text, reply_markup=keyboard_group_edit)
 
+#TODO add on all content_types 
 @bot.message_handler(content_types=['location', 'venue'])
 def check_coordinates(message):
-    #TODO add keyboard of save, edit, delete, rename values
     keyboard_locations_choice = InlineKeyboardMarkup()
+    
+    # boolean_default_name = data_usage.return_user_name_default_bool(message.chat.id)
+    # print(boolean_default_name)
+    # print('####################################################')
     keyboard_locations_choice.row(InlineKeyboardButton(button_location_add, callback_data=callback_sep_addloc))
     if data_usage.check_presence_groups(message.chat.id):
         keyboard_locations_choice.row(InlineKeyboardButton(button_location_send, callback_data=115))
@@ -378,7 +383,7 @@ def calculate_answer_on_the_buttons(query):
 def send_test_message_check(message):
     previously_updated = make_lambda_check()
     presence_user, presence_group = data_usage.check_chat_id(message.chat.id)
-    value_bool, value_text = telegram_manager.produce_check_values(presence_user, presence_group, message.chat.id)
+    value_bool, value_text = telegram_manager.produce_check_values(presence_user, presence_group, message.chat.id, data_usage, message)
     if value_text:
         bot.send_message(chat_id_default, value_text)
         return
@@ -392,21 +397,33 @@ def send_test_message_check(message):
         except Exception as e:
             bot.send_message(message.chat.id, entrance_update_bad)
             bot.send_message(chat_id_default, f'We faced problem with updating groups: {e}')
+
     if message.text == button_settings:
         data_usage.insert_settings(message.chat.id)
         user_id, user_text, user_minutes, username_def, username_bool, *_ = data_usage.return_user_settings(message.chat.id)
-        user_list = [user_id, user_text, user_minutes, username_def, bool(username_bool)] 
+        len_loc, len_group = data_usage.get_length_settings(user_id)
+        user_list = [user_id, user_text, user_minutes, username_def, bool(username_bool), len_loc, len_group] 
+        print(user_list)
+        print('mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm')
+        # data_usage.update_user_settings_default_name(user_id)
         #TODO add here values for the change
+
     if message.text == button_help:
         bot.send_message(message.chat.id, 'TEST5')
         data_usage.check_db()
+
     if message.text == button_groups:
         produce_groups(message)
+
     if message.text == button_locations:
         value_name, value_id, _ = data_usage.get_user_coordinates(message.chat.id)
         value_id = telegram_manager.reconfigure_list_sublists(value_id, value_limit_locations)
         value_name = telegram_manager.reconfigure_list_sublists(value_name, value_limit_locations)
-        produce_reply_locations(message, value_id, value_name, 0)
+        if value_name and value_id:
+            produce_reply_locations(message, value_id, value_name, 0)
+        else:
+            bot.send_message(message.chat.id, entrance_locations_absent)
+
     if message.text == button_support:
         value_msg = bot.send_message(message.chat.id, 'TEST6')
 

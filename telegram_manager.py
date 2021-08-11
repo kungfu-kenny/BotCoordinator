@@ -229,7 +229,7 @@ class TelegramManager:
         msg_longitude = f"___Longitude___: ***{value_longitude}***"
         return '\n'.join([msg_id, msg_name, msg_latitude, msg_longitude])
 
-    def produce_check_values(self, presence_chat:bool, presence_group:bool, chat_id:int) -> set:
+    def produce_check_values(self, presence_chat:bool, presence_group:bool, chat_id:int, data_usage:object, message:object) -> set:
         """
         Method which is dedicated to check that user 
         Input:  presence_chat = presence in the chat database
@@ -246,7 +246,11 @@ class TelegramManager:
             return False, f'Check that your group was connected to the bot. Chat: {chat_id}'
         if presence_chat and presence_group:
             return False, f'Check you have problems with the inserted values. Chat: {chat_id}'
-        
+        if not data_usage.get_user_values(chat_id):
+                data_usage.insert_username(message.from_user.id, message.from_user.username, 
+                                    message.from_user.first_name, message.from_user.last_name)
+        presence_chat, presence_group = data_usage.check_chat_id(message.chat.id)
+        return self.produce_check_values(presence_chat, presence_group, chat_id, data_usage, message)
 
 
 if __name__ == '__main__':

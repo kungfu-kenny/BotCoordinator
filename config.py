@@ -69,6 +69,7 @@ entrance_bot_check_false = "Unfortunatelly, this group is not working properly. 
 entrance_update_good = "We successfully synchronized values of the groups hich you added to the bot"
 entrance_update_bad = "Unfortunatelly, faced some problems with adding groups to database"
 entrance_groups_list = 'Select what to do with groups:'
+entrance_locations_absent = "You didn't provide any locations; please add them later"
 
 command_name_start = 'start'
 command_name_location_add = 'add_location_name'
