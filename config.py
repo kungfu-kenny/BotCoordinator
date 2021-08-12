@@ -29,6 +29,8 @@ callback_sep_senloc = "112"
 callback_sep_group_search = "221"
 callback_sep_group_mine = "222"
 
+callback_settings_update = '311'
+
 callback_sep_loc_show = 'w'
 callback_sep_loc_del = 'z'
 callback_sep_loc_next = "l"
@@ -43,12 +45,18 @@ button_groups_mine_prev = '⬅️'
 button_groups_mine_next = '➡️'
 button_groups_mine_text = 'All added groups:'
 
+button_settings_mine_text = 'My Settings:'
+button_settings_message = 'My Message:'
+button_settings_timing = 'My Timing:'
+button_settings_name_default = 'Default Name:'
+
 button_update = 'Update 🔄'
 button_help = 'Help ❓'
 button_settings = 'Settings ⚙️'
 button_support = "Support 💰"
 button_locations = 'Locations 🌐'
 button_groups = 'Groups 🎻'
+button_change = 'Change'
 
 button_present = '✅'
 button_absent = '❌'

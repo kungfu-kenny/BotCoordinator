@@ -7,6 +7,7 @@ from telegram_manager import TelegramManager
 from config import (button_help, 
                     button_update,
                     button_groups,
+                    button_change,
                     button_support,
                     button_settings,
                     button_locations,
@@ -20,6 +21,10 @@ from config import (button_help,
                     button_groups_mine_prev,
                     button_groups_mine_next,
                     button_groups_mine_check,
+                    button_settings_mine_text,
+                    button_settings_message,
+                    button_settings_timing,
+                    button_settings_name_default,
                     chat_id_default,
                     entrance_groups_list,
                     entrance_bot_usage,
@@ -44,6 +49,7 @@ from config import (button_help,
                     callback_sep_group_mine,
                     callback_sep_group_check,
                     callback_sep_group_search,
+                    callback_settings_update,
                     value_limit_locations,
                     command_name_start,
                     command_name_location_add,
@@ -104,7 +110,7 @@ def make_deletion_check_group(id_user:int, id_group:int, send_message:bool=False
         return False
 
 #TODO work here!
-def produce_settings_show(value_user:int, value_list:list) -> None:
+def produce_settings_show(value_list:list, value_check:bool=False, message_id:int=0) -> None:
     """
     Produce the settings values for the user
     Input:  value_user = id for the callback
@@ -112,6 +118,28 @@ def produce_settings_show(value_user:int, value_list:list) -> None:
     Output: produced values of the settings
     """
     keyboard_user_settings = InlineKeyboardMarkup()
+    user_id, user_text, user_min, user_name_def, user_name_bool, len_loc, len_group = value_list
+    keyboard_user_settings.row(InlineKeyboardButton(button_settings_message, callback_data = '1'),
+                            InlineKeyboardButton(button_change, callback_data = '1'))
+    keyboard_user_settings.row(InlineKeyboardButton(user_text, callback_data = '2')) #TODO change
+    keyboard_user_settings.row(InlineKeyboardButton(button_settings_timing, callback_data = '1'),
+                            InlineKeyboardButton(button_change, callback_data = '1'),
+                            InlineKeyboardButton(user_min, callback_data = '2')) #TODO change
+    keyboard_user_settings.row(InlineKeyboardButton(button_settings_name_default, callback_data = '1'),
+                            InlineKeyboardButton(telegram_manager.manage_additional_values(user_name_bool), 
+                                                                    callback_data=callback_settings_update),
+                            InlineKeyboardButton(button_change, callback_data = '1'))
+    keyboard_user_settings.row(InlineKeyboardButton(user_name_def, callback_data = '2'))
+    button_locations_settings = f"Locations | {telegram_manager.manage_additional_values(len_loc)}:"
+    keyboard_user_settings.row(InlineKeyboardButton(button_locations_settings, callback_data = '1'),
+                                InlineKeyboardButton(len_loc, callback_data = '2')) #TODO change
+    button_groups_settings = f"Groups | {telegram_manager.manage_additional_values(len_group)}:" 
+    keyboard_user_settings.row(InlineKeyboardButton(button_groups_settings, callback_data = '1'),
+                                InlineKeyboardButton(len_group, callback_data = '2')) #TODO change
+    if not value_check:
+        bot.send_message(user_id, button_settings_mine_text, reply_markup=keyboard_user_settings)
+    else:
+        bot.edit_message_reply_markup(user_id, message_id, button_settings_mine_text, reply_markup=keyboard_user_settings)        
 
 def produce_groups(message):
     keyboard_group_choice = InlineKeyboardMarkup()
@@ -309,6 +337,19 @@ def calculate_answer_on_the_buttons(query):
             bot.send_message(new_chat_id, f"We successfully added location with name:\n '{new_name}'")
         return
     
+    if data == callback_settings_update:
+        data_usage.update_user_settings_default_name(query.message.chat.id)
+        user_id, user_text, user_minutes, username_def, username_bool, *_ = data_usage.return_user_settings(query.message.chat.id)
+        len_loc, len_group = data_usage.get_length_settings(user_id)
+        user_list = [user_id, user_text, user_minutes, username_def, bool(username_bool), len_loc, len_group] 
+        produce_settings_show(user_list, True, query.message.id)
+        if username_bool:
+            message_create = 'Now, you always need to add name for added location'
+        else:
+            message_create = "Now, you have automated adding location's name."
+        bot.send_message(user_id, f'We have changed default parameters of the name. {message_create}')
+        return
+
     if data == callback_sep_group_search:
         message_print = "Unfortunatelly, we didn't produce this feature yet"
         bot.send_message(query.message.chat.id, message_print)
@@ -403,10 +444,7 @@ def send_test_message_check(message):
         user_id, user_text, user_minutes, username_def, username_bool, *_ = data_usage.return_user_settings(message.chat.id)
         len_loc, len_group = data_usage.get_length_settings(user_id)
         user_list = [user_id, user_text, user_minutes, username_def, bool(username_bool), len_loc, len_group] 
-        print(user_list)
-        print('mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm')
-        # data_usage.update_user_settings_default_name(user_id)
-        #TODO add here values for the change
+        produce_settings_show(user_list)
 
     if message.text == button_help:
         bot.send_message(message.chat.id, 'TEST5')
