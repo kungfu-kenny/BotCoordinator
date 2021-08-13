@@ -30,6 +30,11 @@ callback_sep_group_search = "221"
 callback_sep_group_mine = "222"
 
 callback_settings_update = '311'
+callback_settings_groups = '321'
+callback_settings_locations = '322'
+callback_settings_default_name = '331'
+callback_settings_default_text = '332'
+callback_settings_default_minute = '333'
 
 callback_sep_loc_show = 'w'
 callback_sep_loc_del = 'z'
@@ -78,6 +83,7 @@ entrance_update_good = "We successfully synchronized values of the groups hich y
 entrance_update_bad = "Unfortunatelly, faced some problems with adding groups to database"
 entrance_groups_list = 'Select what to do with groups:'
 entrance_locations_absent = "You didn't provide any locations; please add them later"
+entrance_groups_absent = "You didn't provide any groups; please add them later"
 
 command_name_start = 'start'
 command_name_location_add = 'add_location_name'

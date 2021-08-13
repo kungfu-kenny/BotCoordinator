@@ -358,6 +358,34 @@ class DataUsage:
             self.proceed_error(msg)
             return False
 
+    def insert_group_additional(self, group_id:int, group_name:str) -> None:
+        """
+        Method which is dedicated to add groups
+        Input:  group_id = id of the group
+                group_name = name of the group
+        Output: We added new group in that cases
+        """
+        try:
+            if not self.get_group_values(group_id, group_name):
+                self.make_group_insertion(group_id, group_name)
+        except Exception as e:
+            msg = f"We faced the problem with additional insertion of the values; Mistake: {e}"
+            self.proceed_error(msg)
+
+    def insert_user_group_additional(self, id_group:int, id_user:int) -> None:
+        """
+        Method which is dedicated to directly insert user_group
+        Input:  id_group = id of the selected group
+                id_user = id of the selected user
+        Output: we created connection between user and group; None
+        """
+        try:
+            if not self.check_user_group_connection(id_group, id_user):
+                self.connect_user_group(id_group, id_user)
+        except Exception as e:
+            msg = f"We faced problems with additional insertion values; Mistake: {e}"
+            self.proceed_error(msg)
+
     def insert_group(self, group_id:int, group_name:str, id_user:int, username:str, name_first:str, name_last:str) -> bool:
         """
         Method which is dedicated to insert group which was inserted to the 
@@ -373,10 +401,8 @@ class DataUsage:
             self.insert_settings(id_user)
             if not self.get_user_values(id_user):
                 self.insert_username(id_user, username, name_first, name_last)
-            if not self.get_group_values(group_id, group_name):
-                self.make_group_insertion(group_id, group_name)
-            if not self.check_user_group_connection(group_id, id_user):
-                self.connect_user_group(group_id, id_user)
+            self.insert_group_additional(group_id, group_name)
+            self.insert_user_group_additional(group_id, id_user)
             self.connection.commit()
             return True
         except Exception as e:
@@ -452,6 +478,40 @@ class DataUsage:
             self.proceed_error(msg)
             return name_loc_default
 
+    def return_user_text(self, id_user:int) -> str:
+        """
+        Method which is dedicated to return default location name
+        Input:  id_user = user id
+        Output: string of the default name
+        """
+        try:
+            name_default = self.cursor.execute(f"SELECT text_sending FROM {table_users_settings} WHERE id_user={id_user};").fetchone()
+            if not name_default:
+                self.insert_settings(id_user)
+                return self.return_user_text(id_user)
+            return name_default[0]
+        except Exception as e:
+            msg = f"We faced problems with return default text. Mistake: {e}"
+            self.proceed_error(msg)
+            return entrance_bot_usage
+
+    def return_user_minutes(self, id_user:int) -> str:
+        """
+        Method which is dedicated to return default location name
+        Input:  id_user = user id
+        Output: string of the default name
+        """
+        try:
+            name_default = self.cursor.execute(f"SELECT text_minutes FROM {table_users_settings} WHERE id_user={id_user};").fetchone()
+            if not name_default:
+                self.insert_settings(id_user)
+                return self.return_user_minutes(id_user)
+            return name_default[0]
+        except Exception as e:
+            msg = f"We faced problems with return default text. Mistake: {e}"
+            self.proceed_error(msg)
+            return value_message_default
+
     def return_user_settings(self, id_user:int) -> list:
         """
         Method which is dedicated to 
@@ -518,7 +578,7 @@ class DataUsage:
                 return 0, 0
             return value_id_loc[0], value_id_group[0]
         except Exception as e:
-            msg = f"We found problem with the getting lengthes of the locations and groups of the users. Mistake: {f}"
+            msg = f"We found problem with the getting lengthes of the locations and groups of the users. Mistake: {e}"
             self.proceed_error(msg)
             return 0, 0
 
@@ -550,7 +610,8 @@ class DataUsage:
             self.cursor.execute(f""" 
                 CREATE TABLE IF NOT EXISTS {table_groups}(
                     id INTEGER PRIMARY KEY,
-                    name TEXT
+                    name TEXT,
+                    date_value DATETIME DEFAULT CURRENT_TIMESTAMP
                 );""")
             self.cursor.execute(f""" 
                 CREATE TABLE IF NOT EXISTS {table_users_groups}(

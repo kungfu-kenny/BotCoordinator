@@ -33,6 +33,7 @@ from config import (button_help,
                     entrance_bot_check_true,
                     entrance_bot_check_false,
                     entrance_bot_check_group,
+                    entrance_groups_absent,
                     entrance_locations_absent,
                     callback_next_loc,
                     callback_show_loc,
@@ -50,6 +51,11 @@ from config import (button_help,
                     callback_sep_group_check,
                     callback_sep_group_search,
                     callback_settings_update,
+                    callback_settings_groups,
+                    callback_settings_locations,
+                    callback_settings_default_name,
+                    callback_settings_default_text,
+                    callback_settings_default_minute,
                     value_limit_locations,
                     command_name_start,
                     command_name_location_add,
@@ -69,6 +75,19 @@ def make_lambda_check() -> bool:
     except Exception as e:
         bot.send_message(chat_id_default, f'We faced problem with updating groups: {e}')
         return False
+
+def additional_group_check(message) -> None:
+    """
+    Function for additionall adding values to the database
+    Input:  message = value from the 
+    Output: we added values to the groups additionally
+    """
+    try:
+        if message.chat.id < 0 and message.chat.type in ['group', 'supergroup']:
+            data_usage.insert_group_additional(message.chat.id, message.chat.type)
+    except Exception as e:
+        msg = f"We faced problems with checking values to the values; Mistake: {e}"
+        bot.send_message(chat_id_default, msg)
 
 def produce_location_show(value_user:int, value_list:list) -> None:
     if value_list:
@@ -109,6 +128,19 @@ def make_deletion_check_group(id_user:int, id_group:int, send_message:bool=False
         bot.send_message(chat_id_default, msg)
         return False
 
+#TODO work here
+def produce_groups_search_show() -> None:
+    """
+    Method which is dedicated to produce
+    Input:  ?
+    Output: we produced values for search of the
+    """
+    try:
+        keyboard_group_search = InlineKeyboardButton()
+    except Exception as e:
+        msg = f"We found problems with the creation of the search show; Mistake: {e}"
+        bot.send_message(chat_id_default, msg)
+        
 #TODO work here!
 def produce_settings_show(value_list:list, value_check:bool=False, message_id:int=0) -> None:
     """
@@ -120,22 +152,22 @@ def produce_settings_show(value_list:list, value_check:bool=False, message_id:in
     keyboard_user_settings = InlineKeyboardMarkup()
     user_id, user_text, user_min, user_name_def, user_name_bool, len_loc, len_group = value_list
     keyboard_user_settings.row(InlineKeyboardButton(button_settings_message, callback_data = '1'),
-                            InlineKeyboardButton(button_change, callback_data = '1'))
-    keyboard_user_settings.row(InlineKeyboardButton(user_text, callback_data = '2')) #TODO change
+                            InlineKeyboardButton(button_change, callback_data = '2')) #TODO change
+    keyboard_user_settings.row(InlineKeyboardButton(user_text, callback_data=callback_settings_default_text))
     keyboard_user_settings.row(InlineKeyboardButton(button_settings_timing, callback_data = '1'),
-                            InlineKeyboardButton(button_change, callback_data = '1'),
-                            InlineKeyboardButton(user_min, callback_data = '2')) #TODO change
+                            InlineKeyboardButton(button_change, callback_data = '2'),#TODO change
+                            InlineKeyboardButton(user_min, callback_data=callback_settings_default_minute)) #TODO change
     keyboard_user_settings.row(InlineKeyboardButton(button_settings_name_default, callback_data = '1'),
                             InlineKeyboardButton(telegram_manager.manage_additional_values(user_name_bool), 
                                                                     callback_data=callback_settings_update),
-                            InlineKeyboardButton(button_change, callback_data = '1'))
-    keyboard_user_settings.row(InlineKeyboardButton(user_name_def, callback_data = '2'))
+                            InlineKeyboardButton(button_change, callback_data = '2')) #TODO change
+    keyboard_user_settings.row(InlineKeyboardButton(user_name_def, callback_data=callback_settings_default_name))
     button_locations_settings = f"Locations | {telegram_manager.manage_additional_values(len_loc)}:"
-    keyboard_user_settings.row(InlineKeyboardButton(button_locations_settings, callback_data = '1'),
-                                InlineKeyboardButton(len_loc, callback_data = '2')) #TODO change
+    keyboard_user_settings.row(InlineKeyboardButton(button_locations_settings, callback_data=callback_settings_locations),
+                                InlineKeyboardButton(len_loc, callback_data='1'))
     button_groups_settings = f"Groups | {telegram_manager.manage_additional_values(len_group)}:" 
-    keyboard_user_settings.row(InlineKeyboardButton(button_groups_settings, callback_data = '1'),
-                                InlineKeyboardButton(len_group, callback_data = '2')) #TODO change
+    keyboard_user_settings.row(InlineKeyboardButton(button_groups_settings, callback_data=callback_settings_groups),
+                                InlineKeyboardButton(len_group, callback_data='1'))
     if not value_check:
         bot.send_message(user_id, button_settings_mine_text, reply_markup=keyboard_user_settings)
     else:
@@ -233,11 +265,15 @@ def produce_reply_groups_edit(message:object, value_list:list, value_list_name:l
 #TODO add on all content_types 
 @bot.message_handler(content_types=['location', 'venue'])
 def check_coordinates(message):
+    additional_group_check(message)
+    presence_user, presence_group = data_usage.check_chat_id(message.chat.id)
+    value_bool, value_text = telegram_manager.produce_check_values(presence_user, presence_group, message.chat.id, data_usage, message)
+    if value_text:
+        bot.send_message(chat_id_default, value_text)
+        return
+    if not value_bool and not value_text:
+        return
     keyboard_locations_choice = InlineKeyboardMarkup()
-    
-    # boolean_default_name = data_usage.return_user_name_default_bool(message.chat.id)
-    # print(boolean_default_name)
-    # print('####################################################')
     keyboard_locations_choice.row(InlineKeyboardButton(button_location_add, callback_data=callback_sep_addloc))
     if data_usage.check_presence_groups(message.chat.id):
         keyboard_locations_choice.row(InlineKeyboardButton(button_location_send, callback_data=115))
@@ -248,6 +284,14 @@ def check_coordinates(message):
 
 @bot.message_handler(commands=[command_name_start])
 def start_messages(message):
+    additional_group_check(message)
+    presence_user, presence_group = data_usage.check_chat_id(message.chat.id)
+    value_bool, value_text = telegram_manager.produce_check_values(presence_user, presence_group, message.chat.id, data_usage, message)
+    if value_text:
+        bot.send_message(chat_id_default, value_text)
+        return
+    if not value_bool and not value_text:
+        return
     markup_test = telegram_manager.return_reply_keyboard()
     link_image = user_profiler.work_on_the_picture()
     if link_image:
@@ -256,6 +300,14 @@ def start_messages(message):
 
 @bot.message_handler(commands=[command_name_location_add])
 def add_location_name(message):
+    additional_group_check(message)
+    presence_user, presence_group = data_usage.check_chat_id(message.chat.id)
+    value_bool, value_text = telegram_manager.produce_check_values(presence_user, presence_group, message.chat.id, data_usage, message)
+    if value_text:
+        bot.send_message(chat_id_default, value_text)
+        return
+    if not value_bool and not value_text:
+        return
     if message.reply_to_message and message.reply_to_message.content_type != "location":
         bot.reply_to(message, 'You have replied your message not to the location, please correct that mistake')
         return
@@ -350,7 +402,47 @@ def calculate_answer_on_the_buttons(query):
         bot.send_message(user_id, f'We have changed default parameters of the name. {message_create}')
         return
 
+    if data in [callback_settings_groups, callback_sep_group_mine]:
+        _, len_group = data_usage.get_length_settings(query.message.chat.id)
+        if len_group:
+            value_id, value_name = data_usage.return_group_values(query.message.chat.id)
+            value_id = telegram_manager.reconfigure_list_sublists(value_id)
+            value_name = telegram_manager.reconfigure_list_sublists(value_name)
+            produce_reply_groups(query.message, value_id, value_name, 0)
+        else:
+            bot.send_message(query.message.chat.id, entrance_groups_absent)
+        return
+
+    if data == callback_settings_locations:
+        len_loc, _ = data_usage.get_length_settings(query.message.chat.id)
+        if len_loc:
+            value_name, value_id, _ = data_usage.get_user_coordinates(query.message.chat.id)
+            value_id = telegram_manager.reconfigure_list_sublists(value_id, value_limit_locations)
+            value_name = telegram_manager.reconfigure_list_sublists(value_name, value_limit_locations)
+            if value_name and value_id:
+                produce_reply_locations(query.message, value_id, value_name, 0)
+        else:
+            bot.send_message(query.message.chat.id, entrance_locations_absent)
+        return
+
+    if data == callback_settings_default_name:
+        name_print = data_usage.return_user_name_settings(query.message.chat.id)
+        bot.send_message(query.message.chat.id, f"Your default name is: \n`{name_print}`", parse_mode='Markdown')
+        return
+
+    if data == callback_settings_default_text:
+        text_print = data_usage.return_user_text(query.message.chat.id)
+        bot.send_message(query.message.chat.id, f"Your default text is: \n`{text_print}`", parse_mode='Markdown')
+        return
+    
+    if data == callback_settings_default_minute:
+        min_print = data_usage.return_user_minutes(query.message.chat.id)
+        bot.send_message(query.message.chat.id, f"Your default minute value is: \n`{min_print}`", parse_mode='Markdown')
+        return
+    
+    #TODO work here
     if data == callback_sep_group_search:
+        # produce_groups_search_show()
         message_print = "Unfortunatelly, we didn't produce this feature yet"
         bot.send_message(query.message.chat.id, message_print)
         return
@@ -399,13 +491,6 @@ def calculate_answer_on_the_buttons(query):
             produce_reply_locations_edit(query.message, values_id, values_name, value_index)
         return
 
-    if data == callback_sep_group_mine:
-        value_id, value_name = data_usage.return_group_values(query.message.chat.id)
-        value_id = telegram_manager.reconfigure_list_sublists(value_id)
-        value_name = telegram_manager.reconfigure_list_sublists(value_name)
-        produce_reply_groups(query.message, value_id, value_name, 0)
-        return
-
     if callback_sep_loc_show in data:
         value_id, value_loc_id = data.split(callback_sep_loc_show)
         value_id, value_loc_id = int(value_id), int(value_loc_id)
@@ -422,7 +507,9 @@ def calculate_answer_on_the_buttons(query):
 
 @bot.message_handler(content_types=["text"])
 def send_test_message_check(message):
+    #TODO rework this shit again
     previously_updated = make_lambda_check()
+    additional_group_check(message)
     presence_user, presence_group = data_usage.check_chat_id(message.chat.id)
     value_bool, value_text = telegram_manager.produce_check_values(presence_user, presence_group, message.chat.id, data_usage, message)
     if value_text:
