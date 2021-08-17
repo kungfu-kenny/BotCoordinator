@@ -42,6 +42,7 @@ from config import (button_help,
                     callback_check_group,
                     callback_delete_group,
                     callback_sep_addloc,
+                    callback_next_search,
                     callback_sep_loc_del,
                     callback_sep_loc_next,
                     callback_sep_loc_show,
@@ -50,6 +51,7 @@ from config import (button_help,
                     callback_sep_group_mine,
                     callback_sep_group_check,
                     callback_sep_group_search,
+                    callback_sep_search_next,
                     callback_settings_update,
                     callback_settings_groups,
                     callback_settings_locations,
@@ -84,7 +86,7 @@ def additional_group_check(message) -> None:
     """
     try:
         if message.chat.id < 0 and message.chat.type in ['group', 'supergroup']:
-            data_usage.insert_group_additional(message.chat.id, message.chat.type)
+            data_usage.insert_group_additional(message.chat.id, message.chat.title)
     except Exception as e:
         msg = f"We faced problems with checking values to the values; Mistake: {e}"
         bot.send_message(chat_id_default, msg)
@@ -129,14 +131,33 @@ def make_deletion_check_group(id_user:int, id_group:int, send_message:bool=False
         return False
 
 #TODO work here
-def produce_groups_search_show() -> None:
+def produce_groups_search_show(message, value_id:list, value_name:list, value_index:int, value_edit:bool=False) -> None:
     """
     Method which is dedicated to produce
-    Input:  ?
+    Input:  message = message of the user
+            value_id = list with id values of the groups
+            value_name = list with names of the groups
+            value_index = index of the search which is required to work with
     Output: we produced values for search of the
     """
     try:
-        keyboard_group_search = InlineKeyboardButton()
+        keyboard_group_search = InlineKeyboardMarkup()
+        button_loc_middle = f'{value_index+1}/{len(value_id)}'
+        value_index_next = telegram_manager.make_callback_values(callback_next_search, message.chat.id, value_index+1, len(value_id))
+        value_index_prev = telegram_manager.make_callback_values(callback_next_search, message.chat.id, value_index-1, len(value_id))
+        print(value_index_next)
+        print('lllllllllllllllllllllllllll')
+        for id, name in zip(value_id[value_index], value_name[value_index]):
+            keyboard_group_search.row(InlineKeyboardButton(id, callback_data='1'),
+                                    InlineKeyboardButton(name, callback_data='1'),
+                                    InlineKeyboardButton('Connect', callback_data='2'))
+        keyboard_group_search.row(InlineKeyboardButton(button_groups_mine_prev, callback_data=value_index_prev), 
+                            InlineKeyboardButton(button_loc_middle, callback_data='1'),
+                            InlineKeyboardButton(button_groups_mine_next, callback_data=value_index_next))
+        if not value_edit:
+            bot.send_message(message.chat.id, 'button_groups_mine_text', reply_markup=keyboard_group_search)  
+        else:
+            bot.edit_message_reply_markup(message.chat.id, message.id, 'button_settings_mine_text', reply_markup=keyboard_group_search)   
     except Exception as e:
         msg = f"We found problems with the creation of the search show; Mistake: {e}"
         bot.send_message(chat_id_default, msg)
@@ -442,9 +463,22 @@ def calculate_answer_on_the_buttons(query):
     
     #TODO work here
     if data == callback_sep_group_search:
-        # produce_groups_search_show()
-        message_print = "Unfortunatelly, we didn't produce this feature yet"
-        bot.send_message(query.message.chat.id, message_print)
+        groups_last = data_usage.get_search_button_basic()
+        value_id, value_name = [i[0] for i in groups_last], [i[1] for i in groups_last]
+        value_id = telegram_manager.reconfigure_list_sublists(value_id)
+        value_name = telegram_manager.reconfigure_list_sublists(value_name)
+        produce_groups_search_show(query.message, value_id, value_name, 0)
+        # message_print = "Unfortunatelly, we didn't produce this feature yet"
+        # bot.send_message(query.message.chat.id, message_print)
+        return
+
+    if callback_sep_search_next in data:
+        value_index, value_len = data.split(callback_sep_search_next)
+        value_index, value_len = int(value_index), int(value_len)
+        value_index = telegram_manager.check_index_inserted(value_index, value_len)
+        groups_last = data_usage.get_search_button_basic()
+        value_id, value_name = [i[0] for i in groups_last], [i[1] for i in groups_last]
+        produce_groups_search_show(query.message, value_id, value_name, value_index, True)
         return
 
     if callback_sep_group_check in data:

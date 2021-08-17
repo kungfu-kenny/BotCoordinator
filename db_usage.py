@@ -8,6 +8,8 @@ from config import (name_db,
                     folder_config,
                     entrance_bot_usage,
                     name_loc_default,
+                    name_join_default,
+                    value_limit_search,
                     value_message_default,
                     value_message_selection_default,
                     table_users,
@@ -16,7 +18,8 @@ from config import (name_db,
                     table_users_groups,
                     table_users_settings,
                     table_groups_selected,
-                    table_users_locations)
+                    table_users_locations,
+                    table_user_group_connect)
 
 
 class DataUsage:
@@ -55,7 +58,10 @@ class DataUsage:
         d = self.cursor.execute(f"SELECT * FROM {table_users_settings};").fetchall()
         print(d)
         print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
-        
+        e = self.get_search_button_basic()
+        print(e)
+        print('________________________________________________________')
+
     def create_connection(self) -> None:
         """
         Method which is dedicated to produce the connection of the 
@@ -198,6 +204,38 @@ class DataUsage:
             return True
         except Exception as e:
             msg = f"We faced problems with checking of the group prensence. Mistake: {e}"
+            self.proceed_error(msg)
+            return False
+
+    def get_search_button_basic(self, groups_limit:int=value_limit_search) -> list:
+        """
+        Method which is dedicated to make basic search 
+        Input:  groups_limit = limitations to the 
+        Output: we get search values of the lists
+        """
+        try:
+            value_list = self.cursor.execute(f"SELECT id, name FROM {table_groups} ORDER BY date_value DESC LIMIT({groups_limit});").fetchall()
+            return value_list
+        except Exception as e:
+            msg = f"We faced problems with get basic search groups. Mistake: {e}"
+            self.proceed_error(msg)
+            return []
+
+    def produce_insert_group_user_connect(self, id_user:int, id_group:int, connect_name:str=name_join_default) -> bool:
+        """
+        Method which is dedicated to make 
+        Input:  id_user = id of the user which must b used
+                id_group = id of the group which is required to make
+                connect_name = connected names with the values
+        Output: inserted values to the table which i required to make the connection
+        """
+        try:
+            self.cursor.execute(f"INSERT INTO {table_user_group_connect}(id_user, id_group, text_message) VALUES (?,?,?);", 
+                                (id_user, id_group, connect_name))
+            self.connection.execute()
+            return True
+        except Exception as e:
+            msg = f"We faced problems with the setting the connection table of user and group. Mistake: {e}"
             self.proceed_error(msg)
             return False
 
@@ -661,6 +699,19 @@ class DataUsage:
                     name_default_video TEXT,
                     video_boolean BOOLEAN DEFAULT FALSE,
                     message_priority INTEGER DEFAULT {value_message_selection_default}
+                );""")
+            self.cursor.execute(f"""
+                CREATE TABLE IF NOT EXISTS {table_user_group_connect}(
+                    id_user INTEGER,
+                    id_group INTEGER,
+                    text_message TEXT DEFAULT "{name_join_default}",
+                    PRIMARY_KEY(id_user, id_group),
+                    FOREIGN KEY (id_user) REFERENCES {table_users} (id)
+                        ON DELETE CASCADE 
+                        ON UPDATE NO ACTION,
+                    FOREIGN KEY (id_group) REFERNCES {table_groups} (id)
+                        ON DELETE CASCADE 
+                        ON UPDATE NO ACTION
                 );""")
             self.connection.commit()
         else:

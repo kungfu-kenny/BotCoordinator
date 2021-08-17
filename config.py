@@ -10,6 +10,7 @@ chat_id_default = os.getenv('CHAT_ID_DEFAULT')
 folder_config = 'config'
 name_db = 'projects.db'
 name_loc_default = "Name Default"
+name_join_default = "bowling"
 
 table_users = 'users'
 table_locations = 'locations'
@@ -18,6 +19,7 @@ table_users_settings = 'users_settings'
 table_users_locations = 'users_locations'
 table_users_groups = 'users_groups'
 table_groups_selected = 'groups_selected'
+table_user_group_connect = 'user_group_connect'
 
 callback_sep_set = "⚙️"
 callback_sep_sup = "💰" 
@@ -42,6 +44,7 @@ callback_sep_loc_next = "l"
 callback_sep_group_upd = "u"
 callback_sep_group_next = "x"
 callback_sep_group_check = "c"
+callback_sep_search_next = 's'
 
 button_location_show = "Show 📍"
 button_groups_mine_del = '❌'
@@ -92,6 +95,7 @@ command_name_group_update = 'edit_group_value'
 
 value_limit = 10
 value_limit_groups = 2
+value_limit_search = 100
 value_limit_locations = 5
 value_message_default = 15
 value_message_selection_default = 1
@@ -103,3 +107,4 @@ callback_next_loc = 'next_loc_list'
 callback_delete_loc = 'update_loc_list'
 callback_show_loc = 'show_loc_list'
 callback_check_group = 'check_group_val'
+callback_next_search = 'next_search_list'

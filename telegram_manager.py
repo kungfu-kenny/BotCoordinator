@@ -18,6 +18,7 @@ from config import (bot_key,
                     chat_id_default,
                     callback_show_loc,
                     callback_next_loc,
+                    callback_next_search,
                     callback_check_group,
                     callback_delete_loc,
                     callback_next_group,
@@ -29,6 +30,7 @@ from config import (bot_key,
                     callback_sep_group_upd,
                     callback_sep_group_next,
                     callback_sep_group_check,
+                    callback_sep_search_next,
                     command_name_location_add,
                     command_name_location_edit)
 
@@ -184,6 +186,9 @@ class TelegramManager:
         if value_type == callback_check_group:
             sep = callback_sep_group_check
             return f"{value_id}{sep}{value_index}"
+        if value_type == callback_next_search:
+            sep = callback_sep_search_next
+            return f"{value_index}{sep}{value_len}"
 
     @staticmethod
     def check_index_inserted(value_index:str, value_len:int) -> int:
