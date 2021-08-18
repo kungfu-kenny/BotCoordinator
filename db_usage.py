@@ -705,11 +705,11 @@ class DataUsage:
                     id_user INTEGER,
                     id_group INTEGER,
                     text_message TEXT DEFAULT "{name_join_default}",
-                    PRIMARY_KEY(id_user, id_group),
+                    PRIMARY KEY(id_user, id_group),
                     FOREIGN KEY (id_user) REFERENCES {table_users} (id)
                         ON DELETE CASCADE 
                         ON UPDATE NO ACTION,
-                    FOREIGN KEY (id_group) REFERNCES {table_groups} (id)
+                    FOREIGN KEY (id_group) REFERENCES {table_groups} (id)
                         ON DELETE CASCADE 
                         ON UPDATE NO ACTION
                 );""")

@@ -10,7 +10,7 @@ chat_id_default = os.getenv('CHAT_ID_DEFAULT')
 folder_config = 'config'
 name_db = 'projects.db'
 name_loc_default = "Name Default"
-name_join_default = "bowling"
+name_join_default = "bowling1"
 
 table_users = 'users'
 table_locations = 'locations'

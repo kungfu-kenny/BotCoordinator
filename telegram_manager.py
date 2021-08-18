@@ -1,5 +1,6 @@
 import os
 import json
+import random
 import requests
 from pprint import pprint
 from telebot.types import ReplyKeyboardMarkup
@@ -23,6 +24,7 @@ from config import (bot_key,
                     callback_delete_loc,
                     callback_next_group,
                     callback_delete_group,
+                    name_join_default,
                     value_limit_groups,
                     callback_sep_loc_del,
                     callback_sep_loc_show,
@@ -50,6 +52,15 @@ class TelegramManager:
         """
         for id_group, group_name, id_user, name_first, name_last, username in self.make_updates():
             data_usage.insert_group(id_group, group_name, id_user, username, name_first, name_last)
+
+    @staticmethod
+    def proceed_random_message() -> str:
+        """
+        Static method which is dedicated to return randim code for the making conncetion
+        Input:  None
+        Output: string for the number to create values
+        """
+        return f"{name_join_default}{random.randint(100000, 1000000)}"
 
     @staticmethod
     def proceed_message_values(message_error:str) -> None:
