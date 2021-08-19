@@ -45,6 +45,7 @@ callback_sep_group_upd = "u"
 callback_sep_group_next = "x"
 callback_sep_group_check = "c"
 callback_sep_search_next = 's'
+callback_sep_group_connect = 'g'
 
 button_location_show = "Show 📍"
 button_groups_mine_del = '❌'
@@ -52,6 +53,7 @@ button_groups_mine_check = 'Check ❔'
 button_groups_mine_prev = '⬅️'
 button_groups_mine_next = '➡️'
 button_groups_mine_text = 'All added groups:'
+button_groups_connect = 'Connect'
 
 button_settings_mine_text = 'My Settings:'
 button_settings_message = 'My Message:'
@@ -108,3 +110,4 @@ callback_delete_loc = 'update_loc_list'
 callback_show_loc = 'show_loc_list'
 callback_check_group = 'check_group_val'
 callback_next_search = 'next_search_list'
+callback_group_connect = 'connect_group_user'

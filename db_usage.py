@@ -1,7 +1,6 @@
 import os
 import sqlite3
 from sqlite3.dbapi2 import Connection
-import sqlite3
 from telegram_manager import TelegramManager
 from config import (name_db,
                     value_limit,
@@ -232,12 +231,60 @@ class DataUsage:
         try:
             self.cursor.execute(f"INSERT INTO {table_user_group_connect}(id_user, id_group, text_message) VALUES (?,?,?);", 
                                 (id_user, id_group, connect_name))
-            self.connection.execute()
+            self.connection.commit()
             return True
         except Exception as e:
             msg = f"We faced problems with the setting the connection table of user and group. Mistake: {e}"
             self.proceed_error(msg)
             return False
+
+    def check_insert_group_user(self, id_user:int, id_group:int) -> bool:
+        """
+        Method which is dedicated to check inserted this values previously
+        Input:  id_user = id of the user
+                id_group = id of the group
+        Output: boolean value which signifies that we already made this
+        """
+        try:
+            value_list = self.cursor.execute(f"SELECT * FROM {table_user_group_connect} WHERE id_user={id_user} AND id_group={id_group};").fetchone()
+            if value_list:
+                return True
+            return False
+        except Exception as e:
+            msg = f"We faced problems with the check previous insertion on th. Mistake: {e} "
+            self.proceed_error(msg)
+            return False
+
+    def return_inserted_message(self, id_user:int, id_group:int) -> str:
+        """
+        Method which is dedicated to return previously 
+        Input:  id_user = id of the user
+                id_group = id of the group
+        Output: string value which user is required to send
+        """
+        try:
+            value_string = self.cursor.execute(f"SELECT text_message FROM {table_user_group_connect} WHERE id_user={id_user} AND id_group={id_group};").fetchone()
+            if value_string:
+                return value_string[0]
+            return ''
+        except Exception as e:
+            msg = f"We found problems with getting message of groups to resend; Mistake: {e}"
+            self.proceed_error(msg)
+            return ''
+
+    def delete_user_group_values(self, id_user:int, id_group:int) -> None:
+        """
+        Method which is dedicated to remove this value in cases of we connected groups
+        Input:  id_user = id of the user
+                id_group = id of this group
+        Output: We removed all possibl values
+        """
+        try:
+            self.cursor.execute(f"DELETE FROM {table_user_group_connect} WHERE id_user={id_user} AND id_group={id_group};")
+            self.connection.commit()
+        except Exception as e:
+            msg = f"We faced problems ith deletion from {table_user_group_connect} table, Mistake: {e}"
+            self.proceed_error(msg)
 
     def return_group_values(self, id_user:int) -> set:
         """

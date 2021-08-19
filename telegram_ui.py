@@ -21,11 +21,13 @@ from config import (button_help,
                     button_groups_mine_prev,
                     button_groups_mine_next,
                     button_groups_mine_check,
+                    button_groups_connect,
                     button_settings_mine_text,
                     button_settings_message,
                     button_settings_timing,
                     button_settings_name_default,
                     chat_id_default,
+                    name_join_default,
                     entrance_groups_list,
                     entrance_bot_usage,
                     entrance_update_bad,
@@ -43,6 +45,7 @@ from config import (button_help,
                     callback_delete_group,
                     callback_sep_addloc,
                     callback_next_search,
+                    callback_group_connect,
                     callback_sep_loc_del,
                     callback_sep_loc_next,
                     callback_sep_loc_show,
@@ -51,6 +54,7 @@ from config import (button_help,
                     callback_sep_group_mine,
                     callback_sep_group_check,
                     callback_sep_group_search,
+                    callback_sep_group_connect,
                     callback_sep_search_next,
                     callback_settings_update,
                     callback_settings_groups,
@@ -87,6 +91,14 @@ def additional_group_check(message) -> None:
     try:
         if message.chat.id < 0 and message.chat.type in ['group', 'supergroup']:
             data_usage.insert_group_additional(message.chat.id, message.chat.title)
+        if message.chat.id < 0 and message.chat.type in ['group', 'supergroup'] and name_join_default in message.text:
+            code_send = data_usage.return_inserted_message(message.from_user.id, message.chat.id)
+            if code_send and name_join_default in code_send and code_send in message.text:
+                data_usage.delete_user_group_values(message.from_user.id, message.chat.id)
+                data_usage.connect_user_group(message.chat.id, message.from_user.id)
+                msg = "We connected you and the group"
+                bot.send_message(message.from_user.id, msg, parse_mode='Markdown')
+
     except Exception as e:
         msg = f"We faced problems with checking values to the values; Mistake: {e}"
         bot.send_message(chat_id_default, msg)
@@ -145,12 +157,11 @@ def produce_groups_search_show(message, value_id:list, value_name:list, value_in
         button_loc_middle = f'{value_index+1}/{len(value_id)}'
         value_index_next = telegram_manager.make_callback_values(callback_next_search, message.chat.id, value_index+1, len(value_id))
         value_index_prev = telegram_manager.make_callback_values(callback_next_search, message.chat.id, value_index-1, len(value_id))
-        print(value_index_next)
-        print('lllllllllllllllllllllllllll')
         for id, name in zip(value_id[value_index], value_name[value_index]):
+            callback_connect = telegram_manager.make_callback_values(callback_group_connect, message.chat.id, id)
             keyboard_group_search.row(InlineKeyboardButton(id, callback_data='1'),
                                     InlineKeyboardButton(name, callback_data='1'),
-                                    InlineKeyboardButton('Connect', callback_data='2'))
+                                    InlineKeyboardButton(button_groups_connect, callback_data=callback_connect))
         keyboard_group_search.row(InlineKeyboardButton(button_groups_mine_prev, callback_data=value_index_prev), 
                             InlineKeyboardButton(button_loc_middle, callback_data='1'),
                             InlineKeyboardButton(button_groups_mine_next, callback_data=value_index_next))
@@ -176,8 +187,8 @@ def produce_settings_show(value_list:list, value_check:bool=False, message_id:in
                             InlineKeyboardButton(button_change, callback_data = '2')) #TODO change
     keyboard_user_settings.row(InlineKeyboardButton(user_text, callback_data=callback_settings_default_text))
     keyboard_user_settings.row(InlineKeyboardButton(button_settings_timing, callback_data = '1'),
-                            InlineKeyboardButton(button_change, callback_data = '2'),#TODO change
-                            InlineKeyboardButton(user_min, callback_data=callback_settings_default_minute)) #TODO change
+                            InlineKeyboardButton(user_min, callback_data=callback_settings_default_minute), #TODO change
+                            InlineKeyboardButton(button_change, callback_data = '2'))#TODO change
     keyboard_user_settings.row(InlineKeyboardButton(button_settings_name_default, callback_data = '1'),
                             InlineKeyboardButton(telegram_manager.manage_additional_values(user_name_bool), 
                                                                     callback_data=callback_settings_update),
@@ -479,6 +490,30 @@ def calculate_answer_on_the_buttons(query):
         groups_last = data_usage.get_search_button_basic()
         value_id, value_name = [i[0] for i in groups_last], [i[1] for i in groups_last]
         produce_groups_search_show(query.message, value_id, value_name, value_index, True)
+        return
+
+    if callback_sep_group_connect in data:
+        id_user, id_group = data.split(callback_sep_group_connect)
+        id_user, id_group = int(id_user), int(id_group)
+        check_within_user_group = data_usage.check_user_group_connection(id_group, id_user)
+        if check_within_user_group:
+            message_print = "You've already produced this connection"
+            bot.send_message(query.message.chat.id, message_print)
+            return
+        check_non_finished = data_usage.check_insert_group_user(id_user, id_group)
+        if check_non_finished:
+            code_send = data_usage.return_inserted_message(id_user, id_group)
+            message_print = f"Your code is: `{code_send}`. Please send this as message to the group which you want to connect"
+            bot.send_message(query.message.chat.id, message_print, parse_mode='Markdown')
+            message_group = f'Code to add: `{code_send}`'
+            bot.send_message(id_group, message_group, parse_mode='Markdown')
+            return
+        code_send = telegram_manager.proceed_random_message()
+        data_usage.produce_insert_group_user_connect(id_user, id_group, code_send)
+        message_print = f"Your code is: `{code_send}`. Please send this as message to the group which you want to connect"
+        bot.send_message(query.message.chat.id, message_print, parse_mode='Markdown')
+        message_group = f'Code to add: `{code_send}`'
+        bot.send_message(id_group, message_group, parse_mode='Markdown')
         return
 
     if callback_sep_group_check in data:
