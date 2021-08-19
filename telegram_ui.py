@@ -472,15 +472,12 @@ def calculate_answer_on_the_buttons(query):
         bot.send_message(query.message.chat.id, f"Your default minute value is: \n`{min_print}`", parse_mode='Markdown')
         return
     
-    #TODO work here
     if data == callback_sep_group_search:
         groups_last = data_usage.get_search_button_basic()
         value_id, value_name = [i[0] for i in groups_last], [i[1] for i in groups_last]
         value_id = telegram_manager.reconfigure_list_sublists(value_id)
         value_name = telegram_manager.reconfigure_list_sublists(value_name)
         produce_groups_search_show(query.message, value_id, value_name, 0)
-        # message_print = "Unfortunatelly, we didn't produce this feature yet"
-        # bot.send_message(query.message.chat.id, message_print)
         return
 
     if callback_sep_search_next in data:
