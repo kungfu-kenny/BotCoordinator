@@ -83,6 +83,54 @@ class DataUsage:
         """
         self.connection.close()
 
+    def update_text_message(self, id_user:int, text_new:str) -> bool:
+        """
+        Method which is dedicated to update sent text
+        Input:  id_user = id of the selected user
+                text_new = text which is dedicated to get updated
+        Output: boolean value which signifies that you updated value succesfully
+        """
+        try:
+            self.cursor.execute(f"UPDATE {table_users_settings} SET text_sending = ? WHERE id_user = ?;", (text_new, id_user))
+            self.connection.commit()
+            return True
+        except Exception as e:
+            msg = f"We face problems with updating the message text; Mistake: {e}"
+            self.proceed_error(msg)
+            return False
+
+    def update_name_default(self, id_user:int, text_new:str) -> bool:
+        """
+        Method which is dedicated to update sent text
+        Input:  id_user = id of the selected user
+                text_new = text which is dedicated to get updated
+        Output: boolean value which signifies that you updated value succesfully
+        """
+        try:
+            self.cursor.execute(f"UPDATE {table_users_settings} SET name_default = ? WHERE id_user = ?;", (text_new, id_user))
+            self.connection.commit()
+            return True
+        except Exception as e:
+            msg = f"We face problems with updating the default name; Mistake: {e}"
+            self.proceed_error(msg)
+            return False
+
+    def update_time_default(self, id_user:int, time_new:int) -> bool:
+        """
+        Method which is dedicated to update sent text
+        Input:  id_user = id of the selected user
+                text_new = text which is dedicated to get updated
+        Output: boolean value which signifies that you updated value succesfully
+        """
+        try:
+            self.cursor.execute(f"UPDATE {table_users_settings} SET text_minutes = ? WHERE id_user = ?;", (time_new, id_user))
+            self.connection.commit()
+            return True
+        except Exception as e:
+            msg = f"We face problems with updating the default name; Mistake: {e}"
+            self.proceed_error(msg)
+            return False
+
     def check_presence_locations(self, id_user:int) -> bool:
         """
         Method which is dedicated to check presence of the locations in the

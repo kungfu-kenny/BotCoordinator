@@ -35,6 +35,9 @@ from config import (bot_key,
                     callback_sep_group_check,
                     callback_sep_search_next,
                     callback_sep_group_connect,
+                    command_edit_time,
+                    command_edit_message,
+                    command_edit_name_default,
                     command_name_location_add,
                     command_name_location_edit)
 
@@ -131,6 +134,53 @@ class TelegramManager:
             value_name = value_string[len(value_command) + 1:]
             value_name = value_name.strip()#.replace(':', '').replace(',', '')
         return value_name, value_bool
+
+    @staticmethod
+    def manage_updated_text(value_string:str) -> set:
+        """
+        Static method which is dedicated to return text value only
+        Input:  value_string = string value of the used by message
+        Output: set with values of the string and 
+        """
+        value_string = value_string.strip()
+        value_text, value_command = '', f"/{command_edit_message}"
+        value_bool = value_command in value_string and value_string[:len(value_command)] == value_command and bool(value_string[len(value_command):])
+        if value_bool:
+            value_text = value_string[len(value_command) + 1:]
+            value_text = value_text.strip()
+        return value_text, value_bool
+
+    @staticmethod
+    def manage_updated_name_default(value_string:str) -> set:
+        """
+        Static method to update the name default
+        Input:  value_string = string which was sent
+        Output: set with the string and boolean
+        """
+        value_string = value_string.strip()
+        value_text, value_command = '', f"/{command_edit_name_default}"
+        value_bool = value_command in value_string and value_string[:len(value_command)] == value_command and bool(value_string[len(value_command):])
+        if value_bool:
+            value_text = value_string[len(value_command) + 1:]
+            value_text = value_text.strip()
+        return value_text, value_bool
+
+    @staticmethod
+    def manage_updated_time(value_string:str) -> set:
+        """
+        Static method which is dedicated to return time of minutes
+        Input:  value_string = string value which user sends
+        Output: set with values of the string
+        """
+        value_string = value_string.strip()
+        value_return, value_command, value_int = 0, f"/{command_edit_time}", False
+        value_bool = value_command in value_string and value_string[:len(value_command)] == value_command and bool(value_string[len(value_command):])
+        if value_bool:
+            value_string = value_string[len(value_command) + 1:]
+            if value_string.isdigit() and value_string.isnumeric():
+                value_return = int(value_string)
+                value_int = True
+        return value_return, value_bool, value_int
 
     @staticmethod
     def manage_updated_name(value_string:str) -> set:

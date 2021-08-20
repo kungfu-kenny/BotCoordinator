@@ -15,6 +15,7 @@ from config import (button_help,
                     button_group_mine,
                     button_group_search,
                     button_location_send,
+                    button_location_resend,
                     button_location_show,
                     button_groups_mine_del,
                     button_groups_mine_text,
@@ -62,10 +63,15 @@ from config import (button_help,
                     callback_settings_default_name,
                     callback_settings_default_text,
                     callback_settings_default_minute,
+                    callback_settings_default_name_edit,
+                    callback_settings_default_text_edit,
+                    callback_settings_default_minute_edit,
                     value_limit_locations,
+                    command_edit_time,
                     command_name_start,
+                    command_edit_message,
+                    command_edit_name_default,
                     command_name_location_add,
-                    command_name_group_update,
                     command_name_location_edit)
 
     
@@ -173,7 +179,6 @@ def produce_groups_search_show(message, value_id:list, value_name:list, value_in
         msg = f"We found problems with the creation of the search show; Mistake: {e}"
         bot.send_message(chat_id_default, msg)
         
-#TODO work here!
 def produce_settings_show(value_list:list, value_check:bool=False, message_id:int=0) -> None:
     """
     Produce the settings values for the user
@@ -184,15 +189,15 @@ def produce_settings_show(value_list:list, value_check:bool=False, message_id:in
     keyboard_user_settings = InlineKeyboardMarkup()
     user_id, user_text, user_min, user_name_def, user_name_bool, len_loc, len_group = value_list
     keyboard_user_settings.row(InlineKeyboardButton(button_settings_message, callback_data = '1'),
-                            InlineKeyboardButton(button_change, callback_data = '2')) #TODO change
+                            InlineKeyboardButton(button_change, callback_data=callback_settings_default_text_edit))
     keyboard_user_settings.row(InlineKeyboardButton(user_text, callback_data=callback_settings_default_text))
     keyboard_user_settings.row(InlineKeyboardButton(button_settings_timing, callback_data = '1'),
-                            InlineKeyboardButton(user_min, callback_data=callback_settings_default_minute), #TODO change
-                            InlineKeyboardButton(button_change, callback_data = '2'))#TODO change
+                            InlineKeyboardButton(user_min, callback_data=callback_settings_default_minute),
+                            InlineKeyboardButton(button_change, callback_data=callback_settings_default_minute_edit))
     keyboard_user_settings.row(InlineKeyboardButton(button_settings_name_default, callback_data = '1'),
                             InlineKeyboardButton(telegram_manager.manage_additional_values(user_name_bool), 
                                                                     callback_data=callback_settings_update),
-                            InlineKeyboardButton(button_change, callback_data = '2')) #TODO change
+                            InlineKeyboardButton(button_change, callback_data=callback_settings_default_name_edit))
     keyboard_user_settings.row(InlineKeyboardButton(user_name_def, callback_data=callback_settings_default_name))
     button_locations_settings = f"Locations | {telegram_manager.manage_additional_values(len_loc)}:"
     keyboard_user_settings.row(InlineKeyboardButton(button_locations_settings, callback_data=callback_settings_locations),
@@ -221,6 +226,7 @@ def produce_reply_locations(message:object, value_list:list, value_list_name:lis
         value_callback_show = telegram_manager.make_callback_values(callback_show_loc, message.chat.id, i)
         value_callback_del = telegram_manager.make_callback_values(callback_delete_loc, message.chat.id, i)
         keyboard_location_reply.row(InlineKeyboardButton(j, callback_data='1'),
+                                InlineKeyboardButton(button_location_send, callback_data='2'), #TODO work here
                                 InlineKeyboardButton(button_location_show, callback_data=value_callback_show),
                                 InlineKeyboardButton(button_groups_mine_del, callback_data=value_callback_del))
     keyboard_location_reply.row(InlineKeyboardButton(button_groups_mine_prev, callback_data=value_index_prev), 
@@ -262,7 +268,6 @@ def produce_reply_groups(message:object, value_list:list, value_list_name:list, 
         value_callback_check = telegram_manager.make_callback_values(callback_check_group, message.chat.id, i)
         keyboard_group_reply.row(InlineKeyboardButton(i, callback_data='1'), 
                                 InlineKeyboardButton(j, callback_data='1'),
-                                # telebot.types.InlineKeyboardButton(text="link", url="https://google.com"),
                                 InlineKeyboardButton(button_groups_mine_check, callback_data=value_callback_check),
                                 InlineKeyboardButton(button_groups_mine_del, callback_data=value_callback_del))
     keyboard_group_reply.row(InlineKeyboardButton(button_groups_mine_prev, callback_data=value_index_prev), 
@@ -286,7 +291,6 @@ def produce_reply_groups_edit(message:object, value_list:list, value_list_name:l
     for i, j in zip(value_list[value_index], value_list_name[value_index]):
         keyboard_group_edit.row(InlineKeyboardButton(i, callback_data='1'), 
                                 InlineKeyboardButton(j, callback_data='1'),
-                                # InlineKeyboardButton(text="link", url="https://google.com"),
                                 InlineKeyboardButton(button_groups_mine_del, callback_data='12'))
 
     keyboard_group_edit.row(InlineKeyboardButton(button_groups_mine_prev, callback_data=value_index_prev), 
@@ -308,10 +312,10 @@ def check_coordinates(message):
     keyboard_locations_choice = InlineKeyboardMarkup()
     keyboard_locations_choice.row(InlineKeyboardButton(button_location_add, callback_data=callback_sep_addloc))
     if data_usage.check_presence_groups(message.chat.id):
-        keyboard_locations_choice.row(InlineKeyboardButton(button_location_send, callback_data=115))
+        keyboard_locations_choice.row(InlineKeyboardButton(button_location_resend, callback_data=1)) #TODO work here!!!
     if data_usage.check_presence_locations(message.chat.id):
-        keyboard_locations_choice.row(InlineKeyboardButton('Update Tags', callback_data=114),
-                                    InlineKeyboardButton('Remove Tags', callback_data=111))
+        keyboard_locations_choice.row(InlineKeyboardButton('Update Tags', callback_data=1), #TODO work here!!!
+                                    InlineKeyboardButton('Remove Tags', callback_data=1)) #TODO work here!!!
     bot.reply_to(message, 'Select command what to do with a location:', reply_markup=keyboard_locations_choice)
 
 @bot.message_handler(commands=[command_name_start])
@@ -362,13 +366,57 @@ def add_location_name(message):
                                 message.from_user.last_name], value_name, value_latitude, value_longitude)
     bot.send_message(message.chat.id, f"We successfully added location with name:\n '{value_name}'")
 
-@bot.message_handler(commands=[command_name_group_update])
+@bot.message_handler(commands=[command_edit_message])
 def change_group_name(message):
-    """
-    Method which is dedicated to update the group name; 
-    """
-    #TODO think about this later
-    pass
+    presence_user, presence_group = data_usage.check_chat_id(message.chat.id)
+    value_bool, value_text = telegram_manager.produce_check_values(presence_user, presence_group, message.chat.id, data_usage, message)
+    if value_text:
+        bot.send_message(chat_id_default, value_text)
+        return
+    if not value_bool and not value_text:
+        return
+    new_message = message.text
+    new_message, message_ok = telegram_manager.manage_updated_text(new_message)
+    if message_ok and data_usage.update_text_message(message.chat.id, new_message):
+        message_send = f"We have updated your message to send for the users to `{new_message}`"
+        bot.send_message(message.chat.id, message_send, parse_mode='Markdown')
+    return
+
+@bot.message_handler(commands=[command_edit_name_default])
+def change_group_name(message):
+    presence_user, presence_group = data_usage.check_chat_id(message.chat.id)
+    value_bool, value_text = telegram_manager.produce_check_values(presence_user, presence_group, message.chat.id, data_usage, message)
+    if value_text:
+        bot.send_message(chat_id_default, value_text)
+        return
+    if not value_bool and not value_text:
+        return
+    new_name = message.text
+    new_name, name_ok = telegram_manager.manage_updated_name_default(new_name)
+    if name_ok and data_usage.update_name_default(message.chat.id, new_name):
+        message_send = f"We have updated your default name for the coordinates to `{new_name}`"
+        bot.send_message(message.chat.id, message_send, parse_mode='Markdown')
+    return
+
+@bot.message_handler(commands=[command_edit_time])
+def change_group_name(message):
+    presence_user, presence_group = data_usage.check_chat_id(message.chat.id)
+    value_bool, value_text = telegram_manager.produce_check_values(presence_user, presence_group, message.chat.id, data_usage, message)
+    if value_text:
+        bot.send_message(chat_id_default, value_text)
+        return
+    if not value_bool and not value_text:
+        return
+    new_time = message.text
+    new_time, time_ok, time_int = telegram_manager.manage_updated_time(new_time)
+    if not time_int:
+        message_send = f"You didn't posted int value, you need to recontinue"
+        bot.send_message(message.chat.id, message_send, parse_mode='Markdown')
+        return
+    if time_ok and data_usage.update_time_default(message.chat.id, new_time):
+        message_send = f"We have updated your default time to `{new_time}`"
+        bot.send_message(message.chat.id, message_send, parse_mode='Markdown')
+    return
 
 @bot.message_handler(commands=[command_name_location_edit])
 def change_location_name_message(message):
@@ -421,6 +469,21 @@ def calculate_answer_on_the_buttons(query):
             bot.send_message(new_chat_id, f"We successfully added location with name:\n '{new_name}'")
         return
     
+    if data == callback_settings_default_text_edit:
+        msg = f'You need to write command like: `/{command_edit_message} "Your new message"` '
+        bot.send_message(query.message.chat.id, msg, parse_mode='Markdown')
+        return
+
+    if data == callback_settings_default_minute_edit:
+        msg = f'You need to write command like: `/{command_edit_time} "Your new default time"` '
+        bot.send_message(query.message.chat.id, msg, parse_mode='Markdown')
+        return
+
+    if data == callback_settings_default_name_edit:
+        msg = f'You need to write command like: `/{command_edit_name_default} "Your new default name"` '
+        bot.send_message(query.message.chat.id, msg, parse_mode='Markdown')
+        return
+
     if data == callback_settings_update:
         data_usage.update_user_settings_default_name(query.message.chat.id)
         user_id, user_text, user_minutes, username_def, username_bool, *_ = data_usage.return_user_settings(query.message.chat.id)

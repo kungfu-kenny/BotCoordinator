@@ -21,11 +21,6 @@ table_users_groups = 'users_groups'
 table_groups_selected = 'groups_selected'
 table_user_group_connect = 'user_group_connect'
 
-callback_sep_set = "⚙️"
-callback_sep_sup = "💰" 
-callback_sep_loc = "🌐"
-callback_sep_gro = "🎻"
-
 callback_sep_addloc = "111"
 callback_sep_senloc = "112"
 callback_sep_group_search = "221"
@@ -37,6 +32,10 @@ callback_settings_locations = '322'
 callback_settings_default_name = '331'
 callback_settings_default_text = '332'
 callback_settings_default_minute = '333'
+
+callback_settings_default_name_edit = '411'
+callback_settings_default_text_edit = '412'
+callback_settings_default_minute_edit = '413'
 
 callback_sep_loc_show = 'w'
 callback_sep_loc_del = 'z'
@@ -71,8 +70,9 @@ button_change = 'Change'
 button_present = '✅'
 button_absent = '❌'
 
+button_location_send = "Send"
 button_location_add = "Add location"
-button_location_send = "Resend location"
+button_location_resend = "Resend location"
 
 button_group_search = "Search Groups"
 button_group_mine = 'My groups'
@@ -94,6 +94,9 @@ command_name_start = 'start'
 command_name_location_add = 'add_location_name'
 command_name_location_edit = 'edit_location_name'
 command_name_group_update = 'edit_group_value'
+command_edit_message = 'edit_message'
+command_edit_name_default = 'edit_name'
+command_edit_time = 'edit_time'
 
 value_limit = 10
 value_limit_groups = 2
