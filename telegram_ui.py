@@ -45,6 +45,8 @@ from config import (button_help,
                     callback_check_group,
                     callback_delete_group,
                     callback_sep_addloc,
+                    callback_sep_senloc,
+                    callback_sep_remloc,
                     callback_next_search,
                     callback_group_connect,
                     callback_sep_loc_del,
@@ -79,6 +81,15 @@ data_usage = DataUsage()
 user_profiler = UserProfiler()
 telegram_manager = TelegramManager()
 
+def callback(update) -> None:
+    value_id = update.user.id
+    value_answers = update.option_ids
+    values_id, values_name = data_usage.return_group_values(value_id)
+    value_selected = [values_name[i] for i in value_answers]
+    #TODO values of the sendigs
+    value_send = [values_id[i] for i in value_answers]
+    print(value_send)
+    print('...............................................')
 
 def make_lambda_check() -> bool:
     try:
@@ -312,10 +323,9 @@ def check_coordinates(message):
     keyboard_locations_choice = InlineKeyboardMarkup()
     keyboard_locations_choice.row(InlineKeyboardButton(button_location_add, callback_data=callback_sep_addloc))
     if data_usage.check_presence_groups(message.chat.id):
-        keyboard_locations_choice.row(InlineKeyboardButton(button_location_resend, callback_data=1)) #TODO work here!!!
+        keyboard_locations_choice.row(InlineKeyboardButton(button_location_resend, callback_data=callback_sep_senloc)) #TODO work here!!!
     if data_usage.check_presence_locations(message.chat.id):
-        keyboard_locations_choice.row(InlineKeyboardButton('Update Tags', callback_data=1), #TODO work here!!!
-                                    InlineKeyboardButton('Remove Tags', callback_data=1)) #TODO work here!!!
+        keyboard_locations_choice.row(InlineKeyboardButton('Remove Location', callback_data=callback_sep_remloc))
     bot.reply_to(message, 'Select command what to do with a location:', reply_markup=keyboard_locations_choice)
 
 @bot.message_handler(commands=[command_name_start])
@@ -418,15 +428,6 @@ def change_group_name(message):
         bot.send_message(message.chat.id, message_send, parse_mode='Markdown')
     return
 
-@bot.message_handler(commands=[command_name_location_edit])
-def change_location_name_message(message):
-    """
-    Method which is dedicated to work with updating the names of the 
-    """
-    #TODO make the functions of checkings, make values check of the strings
-    #TODO make the check these values in the database
-    pass
-
 @bot.callback_query_handler(func=lambda call: True)
 def calculate_answer_on_the_buttons(query):
     data = query.data
@@ -469,6 +470,40 @@ def calculate_answer_on_the_buttons(query):
             bot.send_message(new_chat_id, f"We successfully added location with name:\n '{new_name}'")
         return
     
+    if data == callback_sep_senloc:
+        value_id = query.message.chat.id
+        if not query.message.reply_to_message.location and not query.message.reply_to_message.venue:
+            return
+        if query.message.reply_to_message.location and not query.message.reply_to_message.venue:
+            value_latitude = query.message.reply_to_message.location.latitude
+            value_longitude = query.message.reply_to_message.location.longitude
+        elif not query.message.reply_to_message.location and query.message.reply_to_message.venue:
+            value_latitude = query.message.reply_to_message.venue.latitude
+            value_longitude = query.message.reply_to_message.venue.longitude
+        values_id, values_name = data_usage.return_group_values(value_id)
+        value_poll = bot.send_poll(value_id, 'Select group where to send:', values_name, 
+                                is_anonymous=False, type='regular', allows_multiple_answers=True, open_period=600)
+        #TODO work with the values of the poll
+        print(value_poll.poll.id)
+        return
+
+    if data == callback_sep_remloc:
+        value_id = query.message.chat.id
+        if not query.message.reply_to_message.location and not query.message.reply_to_message.venue:
+            return
+        if query.message.reply_to_message.location and not query.message.reply_to_message.venue:
+            value_latitude = query.message.reply_to_message.location.latitude
+            value_longitude = query.message.reply_to_message.location.longitude
+        elif not query.message.reply_to_message.location and query.message.reply_to_message.venue:
+            value_latitude = query.message.reply_to_message.venue.latitude
+            value_longitude = query.message.reply_to_message.venue.longitude
+        value_list = [value_id, value_latitude, value_longitude]
+        value_true, value_names = data_usage.remove_location_manually(value_list)
+        if value_true and value_names:
+            value_msg_second = "\n".join(value_names)
+            bot.send_message(value_id, f"We removed such locations as: \n{value_msg_second}")
+        return
+
     if data == callback_settings_default_text_edit:
         msg = f'You need to write command like: `/{command_edit_message} "Your new message"` '
         bot.send_message(query.message.chat.id, msg, parse_mode='Markdown')
@@ -680,6 +715,10 @@ def send_test_message_check(message):
 
     if message.text == button_support:
         value_msg = bot.send_message(message.chat.id, 'TEST6')
+
+@bot.poll_answer_handler(callback, pass_update_queue=True)
+def produce_update_poll():
+    pass
 
 
 if __name__ == '__main__':

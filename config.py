@@ -12,17 +12,21 @@ name_db = 'projects.db'
 name_loc_default = "Name Default"
 name_join_default = "bowling1"
 
+table_poll = 'polls'
 table_users = 'users'
 table_locations = 'locations'
 table_groups = 'groups'
 table_users_settings = 'users_settings'
 table_users_locations = 'users_locations'
+table_poll_groups = 'poll_locations'
 table_users_groups = 'users_groups'
 table_groups_selected = 'groups_selected'
 table_user_group_connect = 'user_group_connect'
 
 callback_sep_addloc = "111"
 callback_sep_senloc = "112"
+callback_sep_remloc = "114"
+
 callback_sep_group_search = "221"
 callback_sep_group_mine = "222"
 

@@ -11,9 +11,11 @@ from config import (name_db,
                     value_limit_search,
                     value_message_default,
                     value_message_selection_default,
+                    table_poll,
                     table_users,
                     table_groups,
                     table_locations,
+                    table_poll_groups,
                     table_users_groups,
                     table_users_settings,
                     table_groups_selected,
@@ -187,18 +189,42 @@ class DataUsage:
         try:
             if id_limit:
                 value_groups = self.cursor.execute(f"SELECT id_group FROM {table_users_groups} WHERE id_user={id_chat} LIMIT {id_limit};").fetchall()
-                print(value_groups)
-                print('---------------------------------------------')
             else:
                 value_groups = self.cursor.execute(f"SELECT id_group FROM {table_users_groups} WHERE id_user={id_chat};").fetchall()
-                print(value_groups)
-                print('=============================================')
             value_groups = []
             return value_groups
         except Exception as e:
             msg = f"We found problems with returning groups to values, mistake: {e}"
             self.proceed_error(msg)
             return []
+
+    def remove_location_manually(self, value_list:list) -> bool:
+        """
+        Method which is dedicated to remove values of the
+        Input:  value_list = id of the user, latitude and longitude of the user
+        Output: set with boolean that everything is okay and names of the coordinates which were removed
+        """
+        value_return = []
+        try:
+            value_id, value_latitude, value_longitude = value_list
+            values_id = self.cursor.execute(f"SELECT id_location FROM {table_users_locations} WHERE id_user={value_id};").fetchall()
+            values_id = [str(v[0]) for v in values_id]
+            values_id_str = ','.join(values_id)
+            if values_id_str:
+                value_names = self.cursor.execute(
+                    f"SELECT name_location FROM {table_locations} WHERE id IN ({values_id_str}) AND latitude={value_latitude} AND longitude={value_longitude};"
+                    ).fetchall()
+                if value_names:
+                    value_return = [f[0] for f in value_names]
+                self.cursor.execute(f"DELETE FROM {table_users_locations} WHERE id_user={value_id} AND id_location IN ({values_id_str});")
+                self.cursor.execute(
+                    f"DELETE FROM {table_locations} WHERE id IN ({values_id_str}) AND latitude={value_latitude} AND longitude={value_longitude};").fetchall()
+                self.connection.commit()
+            return True, value_return
+        except Exception as e:
+            msg = f"We faced problems with the deletion of the location in that cases; Mistake: {e}"
+            self.proceed_error(msg)
+            return False, value_return
 
     def get_user_coordinate(self, id_chat:int, id_location:int) -> list:
         """
@@ -802,6 +828,26 @@ class DataUsage:
                     text_message TEXT DEFAULT "{name_join_default}",
                     PRIMARY KEY(id_user, id_group),
                     FOREIGN KEY (id_user) REFERENCES {table_users} (id)
+                        ON DELETE CASCADE 
+                        ON UPDATE NO ACTION,
+                    FOREIGN KEY (id_group) REFERENCES {table_groups} (id)
+                        ON DELETE CASCADE 
+                        ON UPDATE NO ACTION
+                );""")
+            self.cursor.execute(f"""
+                CREATE TABLE IF NOT EXISTS {table_poll}(
+                    id INTEGER,
+                    latitude TEXT,
+                    longitude TEXT,
+                    datetime DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (id)
+                );""")
+            self.cursor.execute(f"""
+                CREATE TABLE IF NOT EXISTS {table_poll_groups}(
+                    id_poll INTEGER,
+                    id_group INTEGER,
+                    PRIMARY KEY (id_poll, id_group),
+                    FOREIGN KEY (id_poll) REFERENCES {table_poll} (id)
                         ON DELETE CASCADE 
                         ON UPDATE NO ACTION,
                     FOREIGN KEY (id_group) REFERENCES {table_groups} (id)
