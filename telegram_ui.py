@@ -68,6 +68,7 @@ from config import (button_help,
                     callback_settings_default_name_edit,
                     callback_settings_default_text_edit,
                     callback_settings_default_minute_edit,
+                    value_limit,
                     value_limit_locations,
                     command_edit_time,
                     command_name_start,
@@ -83,13 +84,15 @@ telegram_manager = TelegramManager()
 
 def callback(update) -> None:
     value_id = update.user.id
+    value_poll_id = update.poll_id
     value_answers = update.option_ids
-    values_id, values_name = data_usage.return_group_values(value_id)
-    value_selected = [values_name[i] for i in value_answers]
-    #TODO values of the sendigs
-    value_send = [values_id[i] for i in value_answers]
-    print(value_send)
-    print('...............................................')
+    value_coordinates, value_groups = data_usage.return_poll_id(value_poll_id)
+    value_groups = [value_groups[i] for i in value_answers]
+    #TODO finish the fight; add function with a message; add in db the removal
+    data_usage.produce_deletion_current_poll(value_poll_id)
+    for group in value_groups:
+        bot.send_location(group, value_coordinates[0], value_coordinates[1])
+        bot.send_message(group, 'check')
 
 def make_lambda_check() -> bool:
     try:
@@ -360,8 +363,8 @@ def add_location_name(message):
     elif not message.reply_to_message:
         bot.reply_to(message, "You need to reply this message to youre coordinate which you have sent")
         return    
-    value_coordinates, _, value_limit = data_usage.get_user_coordinates(message.chat.id)
-    if not value_limit:
+    value_coordinates, _, value_limits = data_usage.get_user_coordinates(message.chat.id)
+    if not value_limits:
         bot.reply_to(message, "You have surpassed the limit of the values")
         return
     value_name, value_check = telegram_manager.manage_added_name(message.text)
@@ -460,8 +463,8 @@ def calculate_answer_on_the_buttons(query):
             bot.send_message(new_chat_id, message_print)
         else:
             new_name = data_usage.return_user_name_settings(new_chat_id)
-            value_coordinates, _, value_limit = data_usage.get_user_coordinates(new_chat_id)
-            if not value_limit:
+            value_coordinates, _, value_limits = data_usage.get_user_coordinates(new_chat_id)
+            if not value_limits:
                 bot.reply_to(query.message, "You have surpassed the limit of the values")
                 return
             new_name = telegram_manager.produce_name_added(new_name, value_coordinates)
@@ -481,10 +484,23 @@ def calculate_answer_on_the_buttons(query):
             value_latitude = query.message.reply_to_message.venue.latitude
             value_longitude = query.message.reply_to_message.venue.longitude
         values_id, values_name = data_usage.return_group_values(value_id)
-        value_poll = bot.send_poll(value_id, 'Select group where to send:', values_name, 
-                                is_anonymous=False, type='regular', allows_multiple_answers=True, open_period=600)
-        #TODO work with the values of the poll
-        print(value_poll.poll.id)
+        if len(values_id) > 1:
+            values_id = telegram_manager.reconfigure_list_sublists(values_id, value_limit)
+            values_name = telegram_manager.reconfigure_list_sublists(values_name, value_limit)
+            #TODO work with the values of the poll
+            for values_id_sub, values_name_sub in zip(values_id, values_name):
+                value_poll = bot.send_poll(value_id, 'Select group where to send:', values_name_sub, 
+                                        is_anonymous=False, type='regular', allows_multiple_answers=True, open_period=600)
+                value_poll_id = value_poll.poll.id
+                values_id_sub = [[id, i, value_poll_id] for id, i in enumerate(values_id_sub)]
+                print(values_id_sub)
+                print('--------------------------------------')
+                print(values_name_sub)
+                print('mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm')
+                data_usage.produce_multiple_insertion_poll(values_id_sub, value_latitude, value_longitude)
+                print('$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$')
+        else:
+            bot.send_message(value_id, 'We will add this feature later')
         return
 
     if data == callback_sep_remloc:
@@ -575,7 +591,11 @@ def calculate_answer_on_the_buttons(query):
         value_id, value_name = [i[0] for i in groups_last], [i[1] for i in groups_last]
         value_id = telegram_manager.reconfigure_list_sublists(value_id)
         value_name = telegram_manager.reconfigure_list_sublists(value_name)
-        produce_groups_search_show(query.message, value_id, value_name, 0)
+        if value_id and value_name:
+            produce_groups_search_show(query.message, value_id, value_name, 0)
+        else:
+            msg = f"Unfortunally, list with groups for now is empty; Please add new groups"
+            bot.send_message(query.message.chat.id, msg)
         return
 
     if callback_sep_search_next in data:

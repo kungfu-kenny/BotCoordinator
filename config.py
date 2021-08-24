@@ -106,6 +106,7 @@ value_limit = 10
 value_limit_groups = 2
 value_limit_search = 100
 value_limit_locations = 5
+value_old_default = 15
 value_message_default = 15
 value_message_selection_default = 1
 const = -0.4

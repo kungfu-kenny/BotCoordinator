@@ -8,6 +8,7 @@ from config import (name_db,
                     entrance_bot_usage,
                     name_loc_default,
                     name_join_default,
+                    value_old_default,
                     value_limit_search,
                     value_message_default,
                     value_message_selection_default,
@@ -741,6 +742,140 @@ class DataUsage:
             self.proceed_error(msg)
             return 0, 0
 
+    def delete_poll(self, value_id:int) -> bool:
+        """
+        Method which is dedicated to removing from the poll coolumns
+        Input:  value_id = id of the poll
+        Output: remove values from poll column
+        """
+        try:
+            self.cursor.execute(f"DELETE FROM {table_poll} WHERE id=?;", (value_id,))
+            self.connection.commit()
+            return True
+        except Exception as e:
+            msg = f'We faced problems with the deleting from the poll table; Mistake: {e}'
+            self.proceed_error(msg)
+            return False
+    
+    def delete_poll_group(self, value_id:int) -> bool:
+        """
+        Method which is dedicated to remove from the poll
+        Input:  value_id = id of the poll
+        Output: removed from the poll_group table
+        """
+        try:
+            self.cursor.execute(f"DELETE FROM {table_poll} WHERE id=?;", (value_id,))
+            self.connection.commit()
+            return True
+        except Exception as e:
+            msg = f"We faced problems with deleting from the poll group table; Mistake: {e}"
+            self.proceed_error(msg)
+            return False
+
+    def produce_deletion_current_poll(self, value_id:list) -> bool:
+        """
+        Methodw which is dedicated to produce deletion from the current id
+        Input:  value_id = id of the poll
+        Output: we removed all values with the
+        """
+        try:
+            self.delete_poll_group(value_id)
+            self.delete_poll(value_id)
+            return True
+        except Exception as e:
+            msg = f"We faced problems with the producing of the deletion; Mistake: {e}"
+            self.proceed_error(msg)
+            return False
+
+    def produce_deletion_previous_values_poll(self) -> bool:
+        """
+        Method which is dedicated 
+        Input:  value_list = list of the values 
+        Output: we removed values which are too old for it
+        """
+        try:
+            value_groups = self.cursor.execute(f"SELECT id from {table_poll} WHERE datediff (minute, GETDATE(), datetime) > {value_old_default};").fetchall()
+            print(value_groups)
+            print('llllllllllllllllllllllllllllllllllllllllllllllllllll')
+            #TODO add here deletion
+            return True
+        except Exception as e:
+            msg = f"We faced problems with the getting old poll values and deleting them; Mistake: {e}"
+            self.proceed_error(msg)
+            return False
+
+    def produce_insertion_poll(self, value_list:list, latitude, longitude) -> bool:
+        """
+        Method which is dedicated to make basic insertion to the
+        Input:  value_list = list with conditions [index, id_group, id_poll]
+        Output: boolean value which was previously signed
+        """
+        try:
+            value_id = value_list[0][-1]
+            self.cursor.execute(f"INSERT INTO {table_poll}(id, latitude, longitude) VALUES(?,?,?);", (value_id, latitude, longitude))
+            self.connection.commit()
+            return True
+        except Exception as e:
+            msg = f"We faced errors with the execution of insertion to the poll table; Mistake: {e}"
+            self.proceed_error(msg)
+            return False
+
+    def produce_insertion_poll_group(self, value_list:list) -> bool:
+        """
+        Method which is dedicated to produce insertion to the poll group
+        Input:  value_list = list for the insertion with values [index, id_group, id_poll]
+        Output: boolean value which signify that everything is okay
+        """
+        try:
+            # string_values = ','.join(['?' for _ in value_list])
+            self.cursor.executemany(f"INSERT INTO {table_poll_groups}(id_int, id_group, id_poll) VALUES (?, ?, ?);", value_list)
+            self.connection.commit()
+            return True
+        except Exception as e:
+            msg = f'We faced problems with multiple group insertion to the database; Mistake: {e}'
+            self.proceed_error(msg)
+            return False
+
+    def return_poll_id(self, value_id:int) -> set:
+        """
+        Method which is dedicated to return all necessary values for the poll id 
+        Input:  value_id = id of the poll which we would further use
+        Output: we get all required values for the sending to the user
+        """
+        try:
+
+            value_coordinates = self.cursor.execute(f"SELECT latitude, longitude FROM {table_poll} WHERE id=?;", (value_id,)).fetchall()
+            value_lists = self.cursor.execute(f"SELECT id_group FROM {table_poll_groups} WHERE id_poll=?;", (value_id,)).fetchall()
+            value_coordinates = value_coordinates[-1] if value_coordinates else []
+            value_lists = [f[0] for f in value_lists] if value_lists else []
+            return value_coordinates, value_lists
+        except Exception as e:
+            msg = f"We faced problems with getting values from the database via poll id; Mistake: {e}"
+            self.proceed_error(msg)
+            return [], []
+
+    def produce_multiple_insertion_poll(self, value_list:list, latitude, longitude) -> bool:
+        """
+        Method which is dedicated to insert values for the quizez
+        Input:  value_list = list with values of the [index, id_group, id_poll]
+                latitude = coordinate value of latitude
+                longitude = coordinate value of longitude
+        Output: we inserted all values and previously checked
+        """
+        try:
+            # self.produce_deletion_previous_values_poll()
+            # self.cursor.execute(f"DELETE FROM {table_poll_groups};")
+            # self.cursor.execute(f"DELETE FROM {table_poll};")
+            # self.connection.commit()
+            # print('))))))))))))))))))))))))))))))))))))))))))))))))))))))))')            
+            self.produce_insertion_poll(value_list, latitude, longitude)
+            self.produce_insertion_poll_group(value_list)
+            return True
+        except Exception as e:
+            msg = f"We faced problems with insertion values to the {table_poll} and {table_poll_groups}; Mistake: {e}"
+            self.proceed_error(msg)
+            return False
+
     def produce_values(self) -> None:
         """
         Method which is dedicated to create the database for the bot usage
@@ -844,6 +979,7 @@ class DataUsage:
                 );""")
             self.cursor.execute(f"""
                 CREATE TABLE IF NOT EXISTS {table_poll_groups}(
+                    id_int INTEGER,
                     id_poll INTEGER,
                     id_group INTEGER,
                     PRIMARY KEY (id_poll, id_group),
