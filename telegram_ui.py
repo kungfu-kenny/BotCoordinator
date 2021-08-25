@@ -1,4 +1,5 @@
 import telebot
+from datetime import datetime, timedelta
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 from telegram_bot import bot
 from db_usage import DataUsage
@@ -17,6 +18,7 @@ from config import (button_help,
                     button_location_send,
                     button_location_resend,
                     button_location_show,
+                    button_groups_recent,
                     button_groups_mine_del,
                     button_groups_mine_text,
                     button_groups_mine_prev,
@@ -44,6 +46,7 @@ from config import (button_help,
                     callback_next_group,
                     callback_check_group,
                     callback_delete_group,
+                    callback_location_send,
                     callback_sep_addloc,
                     callback_sep_senloc,
                     callback_sep_remloc,
@@ -54,6 +57,7 @@ from config import (button_help,
                     callback_sep_loc_show,
                     callback_sep_group_upd,
                     callback_sep_group_next,
+                    callback_sep_loc_send,
                     callback_sep_group_mine,
                     callback_sep_group_check,
                     callback_sep_group_search,
@@ -83,16 +87,22 @@ user_profiler = UserProfiler()
 telegram_manager = TelegramManager()
 
 def callback(update) -> None:
-    value_id = update.user.id
     value_poll_id = update.poll_id
     value_answers = update.option_ids
     value_coordinates, value_groups = data_usage.return_poll_id(value_poll_id)
-    value_groups = [value_groups[i] for i in value_answers]
-    #TODO finish the fight; add function with a message; add in db the removal
-    data_usage.produce_deletion_current_poll(value_poll_id)
-    for group in value_groups:
-        bot.send_location(group, value_coordinates[0], value_coordinates[1])
-        bot.send_message(group, 'check')
+    if value_coordinates and value_groups:
+        value_groups = [value_groups[i] for i in value_answers]
+        # TODO think about the deletion 
+        # if update.user.id == value_coordinates[0]:
+        #     data_usage.produce_deletion_current_poll(value_poll_id)
+        for group in value_groups:
+            value_loc = bot.send_location(group, value_coordinates[1], value_coordinates[2])
+            try:
+                bot.reply_to(value_loc, produce_user_message(value_coordinates[0]), parse_mode='Markdown')
+            except:
+                bot.reply_to(value_loc, produce_user_message(value_coordinates[0]))
+    data_usage.produce_deletion_previous_values_poll()
+    return
 
 def make_lambda_check() -> bool:
     try:
@@ -122,6 +132,24 @@ def additional_group_check(message) -> None:
     except Exception as e:
         msg = f"We faced problems with checking values to the values; Mistake: {e}"
         bot.send_message(chat_id_default, msg)
+
+def produce_user_message(chat_id:int) -> str:
+    _, user_text, user_minutes, *_ = data_usage.return_user_settings(chat_id)
+    value_date = datetime.now() + timedelta(minutes=user_minutes)
+    value_time = f'`{value_date.strftime("%Y-%m-%d %H:%M")}`'
+    user_values = data_usage.return_user_values(chat_id)
+    bool_add_name = bool(user_values)
+    value_post = ''
+    if bool_add_name:
+        name, surname, username = user_values
+        if username:
+            value_post = f"@{username}"
+        elif not username and (name or surname):
+            value_post = f"{name} {surname}".strip()
+        value_list = [user_text, value_time, value_post]
+    else:
+        value_list = [user_text, value_time]
+    return '\n'.join(value_list)
 
 def produce_location_show(value_user:int, value_list:list) -> None:
     if value_list:
@@ -186,7 +214,7 @@ def produce_groups_search_show(message, value_id:list, value_name:list, value_in
                             InlineKeyboardButton(button_loc_middle, callback_data='1'),
                             InlineKeyboardButton(button_groups_mine_next, callback_data=value_index_next))
         if not value_edit:
-            bot.send_message(message.chat.id, 'button_groups_mine_text', reply_markup=keyboard_group_search)  
+            bot.send_message(message.chat.id, button_groups_recent, reply_markup=keyboard_group_search)  
         else:
             bot.edit_message_reply_markup(message.chat.id, message.id, 'button_settings_mine_text', reply_markup=keyboard_group_search)   
     except Exception as e:
@@ -239,8 +267,9 @@ def produce_reply_locations(message:object, value_list:list, value_list_name:lis
     for i, j in zip(value_list[value_index], value_list_name[value_index]):
         value_callback_show = telegram_manager.make_callback_values(callback_show_loc, message.chat.id, i)
         value_callback_del = telegram_manager.make_callback_values(callback_delete_loc, message.chat.id, i)
+        value_callback_send = telegram_manager.make_callback_values(callback_location_send, message.chat.id, i)
         keyboard_location_reply.row(InlineKeyboardButton(j, callback_data='1'),
-                                InlineKeyboardButton(button_location_send, callback_data='2'), #TODO work here
+                                InlineKeyboardButton(button_location_send, callback_data=value_callback_send),
                                 InlineKeyboardButton(button_location_show, callback_data=value_callback_show),
                                 InlineKeyboardButton(button_groups_mine_del, callback_data=value_callback_del))
     keyboard_location_reply.row(InlineKeyboardButton(button_groups_mine_prev, callback_data=value_index_prev), 
@@ -487,20 +516,18 @@ def calculate_answer_on_the_buttons(query):
         if len(values_id) > 1:
             values_id = telegram_manager.reconfigure_list_sublists(values_id, value_limit)
             values_name = telegram_manager.reconfigure_list_sublists(values_name, value_limit)
-            #TODO work with the values of the poll
             for values_id_sub, values_name_sub in zip(values_id, values_name):
                 value_poll = bot.send_poll(value_id, 'Select group where to send:', values_name_sub, 
                                         is_anonymous=False, type='regular', allows_multiple_answers=True, open_period=600)
                 value_poll_id = value_poll.poll.id
                 values_id_sub = [[id, i, value_poll_id] for id, i in enumerate(values_id_sub)]
-                print(values_id_sub)
-                print('--------------------------------------')
-                print(values_name_sub)
-                print('mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm')
-                data_usage.produce_multiple_insertion_poll(values_id_sub, value_latitude, value_longitude)
-                print('$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$')
+                data_usage.produce_multiple_insertion_poll(values_id_sub, value_id, value_latitude, value_longitude)
         else:
-            bot.send_message(value_id, 'We will add this feature later')
+            value_loc = bot.send_location(values_id[0], value_latitude, value_longitude)
+            try:
+                bot.reply_to(value_loc, produce_user_message(value_id), parse_mode='Markdown')
+            except:
+                bot.reply_to(value_loc, produce_user_message(value_id))
         return
 
     if data == callback_sep_remloc:
@@ -596,6 +623,29 @@ def calculate_answer_on_the_buttons(query):
         else:
             msg = f"Unfortunally, list with groups for now is empty; Please add new groups"
             bot.send_message(query.message.chat.id, msg)
+        return
+
+    if callback_sep_loc_send in data:
+        value_id, value_loc_id = data.split(callback_sep_loc_send)
+        value_id, value_loc_id = int(value_id), int(value_loc_id)
+        value_list = data_usage.get_user_coordinate(value_id, value_loc_id)
+        *_, value_latitude, value_longitude = value_list
+        values_id, values_name = data_usage.return_group_values(value_id)
+        if len(values_id) > 1:
+            values_id = telegram_manager.reconfigure_list_sublists(values_id, value_limit)
+            values_name = telegram_manager.reconfigure_list_sublists(values_name, value_limit)
+            for values_id_sub, values_name_sub in zip(values_id, values_name):
+                value_poll = bot.send_poll(value_id, 'Select group where to send:', values_name_sub, 
+                                        is_anonymous=False, type='regular', allows_multiple_answers=True, open_period=600)
+                value_poll_id = value_poll.poll.id
+                values_id_sub = [[id, i, value_poll_id] for id, i in enumerate(values_id_sub)]
+                data_usage.produce_multiple_insertion_poll(values_id_sub, value_id, value_latitude, value_longitude)
+        else:
+            value_loc = bot.send_location(values_id[0], value_latitude, value_longitude)
+            try:
+                bot.reply_to(value_loc, produce_user_message(value_id), parse_mode='Markdown')
+            except:
+                bot.reply_to(value_loc, produce_user_message(value_id))
         return
 
     if callback_sep_search_next in data:

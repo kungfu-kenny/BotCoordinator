@@ -86,6 +86,20 @@ class DataUsage:
         """
         self.connection.close()
 
+    def return_user_values(self, id_user:int) -> set:
+        """
+        Method which is dedicated to return
+        Input:  id_user = id of the selected user
+        Output: list with values
+        """
+        try:
+            value_return = self.cursor.execute(f"SELECT name_first, name_last, nickname FROM {table_users} WHERE id={id_user};").fetchone()
+            return value_return
+        except Exception as e:
+            msg = f"We faced problems with the getting of the user; Mistake: {e}"
+            self.proceed_error(msg)
+            return []
+
     def update_text_message(self, id_user:int, text_new:str) -> bool:
         """
         Method which is dedicated to update sent text
@@ -759,12 +773,12 @@ class DataUsage:
     
     def delete_poll_group(self, value_id:int) -> bool:
         """
-        Method which is dedicated to remove from the poll
+        Method which is dedicated to remove from the poll groups
         Input:  value_id = id of the poll
-        Output: removed from the poll_group table
+        Output: removed from the poll_groups table
         """
         try:
-            self.cursor.execute(f"DELETE FROM {table_poll} WHERE id=?;", (value_id,))
+            self.cursor.execute(f"DELETE FROM {table_poll_groups} WHERE id_poll=?;", (value_id,))
             self.connection.commit()
             return True
         except Exception as e:
@@ -772,7 +786,7 @@ class DataUsage:
             self.proceed_error(msg)
             return False
 
-    def produce_deletion_current_poll(self, value_id:list) -> bool:
+    def produce_deletion_current_poll(self, value_id:int) -> bool:
         """
         Methodw which is dedicated to produce deletion from the current id
         Input:  value_id = id of the poll
@@ -789,22 +803,24 @@ class DataUsage:
 
     def produce_deletion_previous_values_poll(self) -> bool:
         """
-        Method which is dedicated 
-        Input:  value_list = list of the values 
+        Method which is dedicated to remove every olda value from the database
+        Input:  None
         Output: we removed values which are too old for it
         """
         try:
-            value_groups = self.cursor.execute(f"SELECT id from {table_poll} WHERE datediff (minute, GETDATE(), datetime) > {value_old_default};").fetchall()
-            print(value_groups)
-            print('llllllllllllllllllllllllllllllllllllllllllllllllllll')
-            #TODO add here deletion
+            value_groups = self.cursor.execute(f"SELECT id from {table_poll} WHERE (julianday('now') - julianday(datetime)) * 24 * 60 > {value_old_default};").fetchall()
+            value_groups = [str(f[0]) for f in value_groups]
+            value_present = ','.join(value_groups)
+            self.cursor.execute(f"DELETE FROM {table_poll_groups} WHERE id_poll IN ({value_present});")
+            self.cursor.execute(f"DELETE FROM {table_poll} WHERE id IN ({value_present});")
+            self.connection.commit()
             return True
         except Exception as e:
             msg = f"We faced problems with the getting old poll values and deleting them; Mistake: {e}"
             self.proceed_error(msg)
             return False
 
-    def produce_insertion_poll(self, value_list:list, latitude, longitude) -> bool:
+    def produce_insertion_poll(self, value_list:list, id_user, latitude, longitude) -> bool:
         """
         Method which is dedicated to make basic insertion to the
         Input:  value_list = list with conditions [index, id_group, id_poll]
@@ -812,7 +828,7 @@ class DataUsage:
         """
         try:
             value_id = value_list[0][-1]
-            self.cursor.execute(f"INSERT INTO {table_poll}(id, latitude, longitude) VALUES(?,?,?);", (value_id, latitude, longitude))
+            self.cursor.execute(f"INSERT INTO {table_poll}(id, id_user, latitude, longitude) VALUES(?,?,?,?);", (value_id, id_user, latitude, longitude))
             self.connection.commit()
             return True
         except Exception as e:
@@ -827,7 +843,6 @@ class DataUsage:
         Output: boolean value which signify that everything is okay
         """
         try:
-            # string_values = ','.join(['?' for _ in value_list])
             self.cursor.executemany(f"INSERT INTO {table_poll_groups}(id_int, id_group, id_poll) VALUES (?, ?, ?);", value_list)
             self.connection.commit()
             return True
@@ -843,8 +858,7 @@ class DataUsage:
         Output: we get all required values for the sending to the user
         """
         try:
-
-            value_coordinates = self.cursor.execute(f"SELECT latitude, longitude FROM {table_poll} WHERE id=?;", (value_id,)).fetchall()
+            value_coordinates = self.cursor.execute(f"SELECT id_user, latitude, longitude FROM {table_poll} WHERE id=?;", (value_id,)).fetchall()
             value_lists = self.cursor.execute(f"SELECT id_group FROM {table_poll_groups} WHERE id_poll=?;", (value_id,)).fetchall()
             value_coordinates = value_coordinates[-1] if value_coordinates else []
             value_lists = [f[0] for f in value_lists] if value_lists else []
@@ -854,7 +868,7 @@ class DataUsage:
             self.proceed_error(msg)
             return [], []
 
-    def produce_multiple_insertion_poll(self, value_list:list, latitude, longitude) -> bool:
+    def produce_multiple_insertion_poll(self, value_list:list, chat_id:int, latitude, longitude) -> bool:
         """
         Method which is dedicated to insert values for the quizez
         Input:  value_list = list with values of the [index, id_group, id_poll]
@@ -863,12 +877,8 @@ class DataUsage:
         Output: we inserted all values and previously checked
         """
         try:
-            # self.produce_deletion_previous_values_poll()
-            # self.cursor.execute(f"DELETE FROM {table_poll_groups};")
-            # self.cursor.execute(f"DELETE FROM {table_poll};")
-            # self.connection.commit()
-            # print('))))))))))))))))))))))))))))))))))))))))))))))))))))))))')            
-            self.produce_insertion_poll(value_list, latitude, longitude)
+            self.produce_deletion_previous_values_poll()
+            self.produce_insertion_poll(value_list, chat_id, latitude, longitude)
             self.produce_insertion_poll_group(value_list)
             return True
         except Exception as e:
@@ -972,6 +982,7 @@ class DataUsage:
             self.cursor.execute(f"""
                 CREATE TABLE IF NOT EXISTS {table_poll}(
                     id INTEGER,
+                    id_user INTEGER,
                     latitude TEXT,
                     longitude TEXT,
                     datetime DATETIME DEFAULT CURRENT_TIMESTAMP,

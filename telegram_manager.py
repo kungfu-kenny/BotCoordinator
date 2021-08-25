@@ -25,10 +25,12 @@ from config import (bot_key,
                     callback_next_group,
                     callback_delete_group,
                     callback_group_connect,
+                    callback_location_send,
                     name_join_default,
                     value_limit_groups,
                     callback_sep_loc_del,
                     callback_sep_loc_show,
+                    callback_sep_loc_send,
                     callback_sep_loc_next,
                     callback_sep_group_upd,
                     callback_sep_group_next,
@@ -255,6 +257,10 @@ class TelegramManager:
         if value_type == callback_group_connect:
             sep = callback_sep_group_connect
             return f"{value_id}{sep}{value_index}"
+        if value_type == callback_location_send:
+            sep = callback_sep_loc_send
+            return f"{value_id}{sep}{value_index}"
+
 
     @staticmethod
     def check_index_inserted(value_index:str, value_len:int) -> int:
