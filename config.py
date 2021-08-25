@@ -6,6 +6,8 @@ load_dotenv()
 bot_key = os.getenv('BOT_KEY')
 separator = '96ba108c-e5ea-4aeb-bd51-5da39b758192-9ba2af35-8981-41f4-980f-13bbf18fcdfb'
 chat_id_default = os.getenv('CHAT_ID_DEFAULT')
+url_sound = os.getenv('URL_SOUND')
+name_sound = 'roman.mp3'
 
 folder_config = 'config'
 name_db = 'projects.db'
@@ -28,7 +30,8 @@ callback_sep_senloc = "112"
 callback_sep_remloc = "114"
 
 callback_sep_group_search = "221"
-callback_sep_group_mine = "222"
+callback_sep_group_search_manual = '222'
+callback_sep_group_mine = "223"
 
 callback_settings_update = '311'
 callback_settings_groups = '321'
@@ -81,6 +84,7 @@ button_location_add = "Add location"
 button_location_resend = "Resend location"
 
 button_group_search = "Search Groups"
+button_group_search_manually = "Search Manually"
 button_group_mine = 'My groups'
 
 entrance_values = "Welcome to the Group Management"
@@ -90,7 +94,7 @@ entrance_bot_img_link = os.getenv('IMG_ROMAN')
 entrance_bot_check_group = "This is a test message for check that bot is abandonded here"
 entrance_bot_check_true = 'Group is fully functioning, everything is okay'
 entrance_bot_check_false = "Unfortunatelly, this group is not working properly. We recommend you to remove group from the list"
-entrance_update_good = "We successfully synchronized values of the groups hich you added to the bot"
+entrance_update_good = "We successfully synchronized values of the groups which you added to the bot; We have updated all provided by you information"
 entrance_update_bad = "Unfortunatelly, faced some problems with adding groups to database"
 entrance_groups_list = 'Select what to do with groups:'
 entrance_locations_absent = "You didn't provide any locations; please add them later"
@@ -103,6 +107,7 @@ command_name_group_update = 'edit_group_value'
 command_edit_message = 'edit_message'
 command_edit_name_default = 'edit_name'
 command_edit_time = 'edit_time'
+command_search_group = 'search_group'
 
 value_limit = 10
 value_limit_groups = 2

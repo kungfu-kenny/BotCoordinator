@@ -100,6 +100,19 @@ class DataUsage:
             self.proceed_error(msg)
             return []
 
+    def update_user_information(self, value_list:list) -> None:
+        """
+        Method which is dedicated to produce the changes of the user values
+        Input:  value_list = list value of the format [name_first, name_last, username, user_id]
+        Output: we successfully updated all these values
+        """
+        try:
+            self.cursor.execute(f"UPDATE {table_users} SET name_first=?, name_last=?, nickname=? WHERE id=?;", value_list)
+            self.connection.commit()
+        except Exception as e:
+            msg = f"We faced problems with updating all name values; Mistake: {e}"
+            self.proceed_error(msg)
+
     def update_text_message(self, id_user:int, text_new:str) -> bool:
         """
         Method which is dedicated to update sent text
@@ -298,7 +311,7 @@ class DataUsage:
     def get_search_button_basic(self, groups_limit:int=value_limit_search) -> list:
         """
         Method which is dedicated to make basic search 
-        Input:  groups_limit = limitations to the 
+        Input:  groups_limit = limitations to the returnal of groups
         Output: we get search values of the lists
         """
         try:
@@ -306,6 +319,22 @@ class DataUsage:
             return value_list
         except Exception as e:
             msg = f"We faced problems with get basic search groups. Mistake: {e}"
+            self.proceed_error(msg)
+            return []
+
+    def get_search_button_manually(self, input_string:str, groups_limit:int=value_limit_search) -> list:
+        """
+        Method which is dedicated to make manual search of the groups for the more clear usage of it
+        Input:  input_string = input string from the user
+                groups_limit = limitations for the returnal of groups
+        Output: we get groups for user to manually search
+        """
+        try:
+            value_list = self.cursor.execute(
+                f"SELECT id, name FROM {table_groups} WHERE name LIKE %?% ORDER BY date_value DESC LIMIT({groups_limit});", (input_string,)).fetchall()         
+            return value_list
+        except Exception as e:
+            msg = f"We faced problems with getting manual search groups. Mistake: {e}"
             self.proceed_error(msg)
             return []
 

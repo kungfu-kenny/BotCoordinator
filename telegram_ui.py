@@ -1,3 +1,4 @@
+import random
 import telebot
 from datetime import datetime, timedelta
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
@@ -28,6 +29,7 @@ from config import (button_help,
                     button_settings_mine_text,
                     button_settings_message,
                     button_settings_timing,
+                    button_group_search_manually,
                     button_settings_name_default,
                     chat_id_default,
                     name_join_default,
@@ -63,6 +65,7 @@ from config import (button_help,
                     callback_sep_group_search,
                     callback_sep_group_connect,
                     callback_sep_search_next,
+                    callback_sep_group_search_manual,
                     callback_settings_update,
                     callback_settings_groups,
                     callback_settings_locations,
@@ -77,6 +80,7 @@ from config import (button_help,
                     command_edit_time,
                     command_name_start,
                     command_edit_message,
+                    command_search_group,
                     command_edit_name_default,
                     command_name_location_add,
                     command_name_location_edit)
@@ -190,10 +194,9 @@ def make_deletion_check_group(id_user:int, id_group:int, send_message:bool=False
         bot.send_message(chat_id_default, msg)
         return False
 
-#TODO work here
 def produce_groups_search_show(message, value_id:list, value_name:list, value_index:int, value_edit:bool=False) -> None:
     """
-    Method which is dedicated to produce
+    Function which is dedicated to produce showings of every locations
     Input:  message = message of the user
             value_id = list with id values of the groups
             value_name = list with names of the groups
@@ -255,6 +258,7 @@ def produce_settings_show(value_list:list, value_check:bool=False, message_id:in
 def produce_groups(message):
     keyboard_group_choice = InlineKeyboardMarkup()
     keyboard_group_choice.row(InlineKeyboardButton(button_group_search, callback_data=callback_sep_group_search))
+    keyboard_group_choice.row(InlineKeyboardButton(button_group_search_manually, callback_data=callback_sep_group_search_manual))
     if data_usage.check_presence_groups(message.chat.id):
         keyboard_group_choice.row(InlineKeyboardButton(button_group_mine, callback_data=callback_sep_group_mine))
     bot.reply_to(message, entrance_groups_list, reply_markup=keyboard_group_choice)
@@ -355,7 +359,7 @@ def check_coordinates(message):
     keyboard_locations_choice = InlineKeyboardMarkup()
     keyboard_locations_choice.row(InlineKeyboardButton(button_location_add, callback_data=callback_sep_addloc))
     if data_usage.check_presence_groups(message.chat.id):
-        keyboard_locations_choice.row(InlineKeyboardButton(button_location_resend, callback_data=callback_sep_senloc)) #TODO work here!!!
+        keyboard_locations_choice.row(InlineKeyboardButton(button_location_resend, callback_data=callback_sep_senloc))
     if data_usage.check_presence_locations(message.chat.id):
         keyboard_locations_choice.row(InlineKeyboardButton('Remove Location', callback_data=callback_sep_remloc))
     bot.reply_to(message, 'Select command what to do with a location:', reply_markup=keyboard_locations_choice)
@@ -372,9 +376,13 @@ def start_messages(message):
         return
     markup_test = telegram_manager.return_reply_keyboard()
     link_image = user_profiler.work_on_the_picture()
+    value_audio = user_profiler.produce_music_start()
     if link_image:
         with open(link_image, 'rb') as instance_img:
             bot.send_photo(message.from_user.id, instance_img, caption=entrance_bot_usage, reply_markup=markup_test)
+    if value_audio:
+        with open(value_audio, 'rb') as audio:
+            bot.send_voice(message.chat.id, audio, reply_markup=markup_test)
 
 @bot.message_handler(commands=[command_name_location_add])
 def add_location_name(message):
@@ -458,6 +466,20 @@ def change_group_name(message):
     if time_ok and data_usage.update_time_default(message.chat.id, new_time):
         message_send = f"We have updated your default time to `{new_time}`"
         bot.send_message(message.chat.id, message_send, parse_mode='Markdown')
+    return
+
+@bot.message_handler(commands=[command_search_group])
+def search_group(message):
+    presence_user, presence_group = data_usage.check_chat_id(message.chat.id)
+    value_bool, value_text = telegram_manager.produce_check_values(presence_user, presence_group, message.chat.id, data_usage, message)
+    if value_text:
+        bot.send_message(chat_id_default, value_text)
+        return
+    if not value_bool and not value_text:
+        return
+    new_text = message.text
+    #TODO work here
+    bot.send_message(message.chat.id, 'Working on it')
     return
 
 @bot.callback_query_handler(func=lambda call: True)
@@ -625,6 +647,11 @@ def calculate_answer_on_the_buttons(query):
             bot.send_message(query.message.chat.id, msg)
         return
 
+    if data == callback_sep_group_search_manual:
+        msg = f'For manual search, you need to perform command like:\n `/{command_search_group} "Your group"`'
+        bot.send_message(query.message.chat.id, msg, parse_mode='Markdown')
+        return
+
     if callback_sep_loc_send in data:
         value_id, value_loc_id = data.split(callback_sep_loc_send)
         value_id, value_loc_id = int(value_id), int(value_loc_id)
@@ -755,6 +782,8 @@ def send_test_message_check(message):
         try:
             if not previously_updated:
                 make_lambda_check()
+            value_list = [message.chat.first_name, message.chat.last_name, message.chat.username, message.chat.id]
+            data_usage.update_user_information(value_list)
             bot.send_message(message.chat.id, entrance_update_good)
         except Exception as e:
             bot.send_message(message.chat.id, entrance_update_bad)
@@ -768,7 +797,7 @@ def send_test_message_check(message):
         produce_settings_show(user_list)
 
     if message.text == button_help:
-        bot.send_message(message.chat.id, 'TEST5')
+        bot.send_message(message.chat.id, 'Unfortunatelly we didn\'t produce this feature')
         data_usage.check_db()
 
     if message.text == button_groups:
@@ -784,7 +813,7 @@ def send_test_message_check(message):
             bot.send_message(message.chat.id, entrance_locations_absent)
 
     if message.text == button_support:
-        value_msg = bot.send_message(message.chat.id, 'TEST6')
+        value_msg = bot.send_message(message.chat.id, 'Unfortunatelly we didn\'t produce this feature')
 
 @bot.poll_answer_handler(callback, pass_update_queue=True)
 def produce_update_poll():

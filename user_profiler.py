@@ -1,7 +1,10 @@
 import os
+import pafy
 import requests
 from telegram_manager import TelegramManager
-from config import (folder_config,
+from config import (url_sound,
+                    name_sound,
+                    folder_config,
                     # chat_id_default,
                     entrance_bot_img_name,
                     entrance_bot_img_link)
@@ -49,7 +52,26 @@ class UserProfiler:
             a.proceed_message_values(f'We faced problem with the getting requests. Mistake: {e}')
         return ''
 
+    def produce_music_start(self) -> str:
+        """
+        Method which is dedicated to create the audio for the start
+        Input:  None
+        Output: path to the audio message for stat
+        """
+        try:
+            self.folder_create(self.folder_config)
+            value_path = os.path.join(self.folder_config, name_sound)
+            if not (os.path.exists(value_path) and os.path.isfile(value_path)):
+                audio_get = pafy.new(url=url_sound)
+                best_audio = audio_get.getbestaudio()
+                best_audio.download(filepath=value_path)
+            return value_path
+        except Exception as e:
+            a = TelegramManager()
+            a.proceed_message_values(f'We faced problem with the getting audio. Mistake: {e}')
+            return ''
 
 if __name__ == '__main__':
     a = UserProfiler()
-    a.work_on_the_picture()
+    # a.work_on_the_picture()
+    a.produce_music_start()
