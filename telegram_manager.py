@@ -26,6 +26,7 @@ from config import (bot_key,
                     callback_delete_group,
                     callback_group_connect,
                     callback_location_send,
+                    callback_next_search_manually,
                     name_join_default,
                     value_limit_groups,
                     callback_sep_loc_del,
@@ -37,8 +38,10 @@ from config import (bot_key,
                     callback_sep_group_check,
                     callback_sep_search_next,
                     callback_sep_group_connect,
+                    callback_sep_search_next_manual,
                     command_edit_time,
                     command_edit_message,
+                    command_search_group,
                     command_edit_name_default,
                     command_name_location_add,
                     command_name_location_edit)
@@ -191,7 +194,6 @@ class TelegramManager:
         Input:  value_string = string which user has been inserted to update
         Output: set with values of 
         """
-        #TODO add additional checking on all of this
         value_name_old, value_name_new, value_command, value_bool_comm = [], [], f"/{command_name_location_edit}", False
         value_bool = value_command in value_string and value_string[:len(value_command)] == value_command and bool(value_string[len(value_command):])
         if value_bool:
@@ -211,6 +213,22 @@ class TelegramManager:
                 else:
                     value_name_old.append(value_name)
         return value_name_new, value_name_old, value_bool, value_bool_comm
+
+    @staticmethod
+    def manage_updated_search(value_string:str) -> set:
+        """
+        Static method which is dedicated to observe the 
+        Input:  value_string = string value with the 
+        Output: set values of the string to search 
+        """
+        value_string = value_string.strip()
+        value_text, value_command = '', f"/{command_search_group}"
+        value_bool = value_command in value_string and value_string[:len(value_command)] == value_command and bool(value_string[len(value_command):])
+        if value_bool:
+            value_text = value_string[len(value_command) + 1:]
+            value_text = ' '.join([f for f in value_text.split(' ') if f])
+            value_text = value_text.strip()
+        return value_text, value_bool
 
     def produce_name_added(self, value_string:str, value_list:list) -> str:
         """
@@ -254,6 +272,9 @@ class TelegramManager:
         if value_type == callback_next_search:
             sep = callback_sep_search_next
             return f"{value_index}{sep}{value_len}"
+        if value_type == callback_next_search_manually:
+            sep = callback_sep_search_next_manual
+            return f"{value_index}{sep}{value_len}{sep}{value_group}"
         if value_type == callback_group_connect:
             sep = callback_sep_group_connect
             return f"{value_id}{sep}{value_index}"

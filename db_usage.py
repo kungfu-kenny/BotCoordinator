@@ -331,7 +331,7 @@ class DataUsage:
         """
         try:
             value_list = self.cursor.execute(
-                f"SELECT id, name FROM {table_groups} WHERE name LIKE %?% ORDER BY date_value DESC LIMIT({groups_limit});", (input_string,)).fetchall()         
+                f"SELECT id, name FROM {table_groups} WHERE name LIKE ? ORDER BY date_value DESC LIMIT({groups_limit});", (f"%{input_string}%",)).fetchall()         
             return value_list
         except Exception as e:
             msg = f"We faced problems with getting manual search groups. Mistake: {e}"

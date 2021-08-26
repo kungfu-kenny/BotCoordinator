@@ -54,6 +54,7 @@ from config import (button_help,
                     callback_sep_remloc,
                     callback_next_search,
                     callback_group_connect,
+                    callback_next_search_manually,
                     callback_sep_loc_del,
                     callback_sep_loc_next,
                     callback_sep_loc_show,
@@ -65,6 +66,7 @@ from config import (button_help,
                     callback_sep_group_search,
                     callback_sep_group_connect,
                     callback_sep_search_next,
+                    callback_sep_search_next_manual,
                     callback_sep_group_search_manual,
                     callback_settings_update,
                     callback_settings_groups,
@@ -194,20 +196,29 @@ def make_deletion_check_group(id_user:int, id_group:int, send_message:bool=False
         bot.send_message(chat_id_default, msg)
         return False
 
-def produce_groups_search_show(message, value_id:list, value_name:list, value_index:int, value_edit:bool=False) -> None:
+def produce_groups_search_show(message, value_id:list, value_name:list, value_index:int, value_edit:bool=False, value_search:bool=False, search:str='') -> None:
     """
     Function which is dedicated to produce showings of every locations
     Input:  message = message of the user
             value_id = list with id values of the groups
             value_name = list with names of the groups
             value_index = index of the search which is required to work with
+            value_edit = boolean to signify that we are going to update and not shwing markup
+            value_search = value which signify that we use it for search
+            search = string which is need to be sended after searchin to next value
     Output: we produced values for search of the
     """
     try:
         keyboard_group_search = InlineKeyboardMarkup()
         button_loc_middle = f'{value_index+1}/{len(value_id)}'
-        value_index_next = telegram_manager.make_callback_values(callback_next_search, message.chat.id, value_index+1, len(value_id))
-        value_index_prev = telegram_manager.make_callback_values(callback_next_search, message.chat.id, value_index-1, len(value_id))
+        if value_search:
+            callback_here = callback_next_search_manually
+            value_index_next = telegram_manager.make_callback_values(callback_here, message.chat.id, value_index+1, len(value_id), search)
+            value_index_prev = telegram_manager.make_callback_values(callback_here, message.chat.id, value_index-1, len(value_id), search)
+        else:
+            callback_here = callback_next_search
+            value_index_next = telegram_manager.make_callback_values(callback_here, message.chat.id, value_index+1, len(value_id))
+            value_index_prev = telegram_manager.make_callback_values(callback_here, message.chat.id, value_index-1, len(value_id))
         for id, name in zip(value_id[value_index], value_name[value_index]):
             callback_connect = telegram_manager.make_callback_values(callback_group_connect, message.chat.id, id)
             keyboard_group_search.row(InlineKeyboardButton(id, callback_data='1'),
@@ -219,7 +230,7 @@ def produce_groups_search_show(message, value_id:list, value_name:list, value_in
         if not value_edit:
             bot.send_message(message.chat.id, button_groups_recent, reply_markup=keyboard_group_search)  
         else:
-            bot.edit_message_reply_markup(message.chat.id, message.id, 'button_settings_mine_text', reply_markup=keyboard_group_search)   
+            bot.edit_message_reply_markup(message.chat.id, message.id, button_groups_recent, reply_markup=keyboard_group_search)   
     except Exception as e:
         msg = f"We found problems with the creation of the search show; Mistake: {e}"
         bot.send_message(chat_id_default, msg)
@@ -477,9 +488,21 @@ def search_group(message):
         return
     if not value_bool and not value_text:
         return
-    new_text = message.text
-    #TODO work here
-    bot.send_message(message.chat.id, 'Working on it')
+    text_search, text_bool = telegram_manager.manage_updated_search(message.text)
+    if text_bool:
+        groups_last = data_usage.get_search_button_manually(text_search)
+        value_id, value_name = [i[0] for i in groups_last], [i[1] for i in groups_last]
+        value_id = telegram_manager.reconfigure_list_sublists(value_id)
+        value_name = telegram_manager.reconfigure_list_sublists(value_name)
+        if value_id and value_name:
+
+            text_search = text_search[:40] if len(text_search) > 40 else text_search
+            produce_groups_search_show(message, value_id, value_name, 0, 0, 1, text_search)
+        else:
+            msg = f"Unfortunally, we didn't found any groups which would match by search"
+            bot.send_message(message.chat.id, msg)
+    else:
+        bot.send_message(message.chat.id, 'To search values you need to insert this string')
     return
 
 @bot.callback_query_handler(func=lambda call: True)
@@ -681,7 +704,25 @@ def calculate_answer_on_the_buttons(query):
         value_index = telegram_manager.check_index_inserted(value_index, value_len)
         groups_last = data_usage.get_search_button_basic()
         value_id, value_name = [i[0] for i in groups_last], [i[1] for i in groups_last]
-        produce_groups_search_show(query.message, value_id, value_name, value_index, True)
+        value_id = telegram_manager.reconfigure_list_sublists(value_id)
+        value_name = telegram_manager.reconfigure_list_sublists(value_name)
+        if value_id and value_name and value_len > 1:
+            produce_groups_search_show(query.message, value_id, value_name, value_index, True)
+        return
+
+    if callback_sep_search_next_manual in data:
+        data_list = data.split(callback_sep_search_next_manual)
+        value_index = data_list.pop(0)
+        value_len = data_list.pop(0)
+        search = callback_sep_search_next_manual.join(data_list)
+        value_index, value_len = int(value_index), int(value_len)
+        value_index = telegram_manager.check_index_inserted(value_index, value_len)
+        groups_last = data_usage.get_search_button_manually(search)
+        value_id, value_name = [i[0] for i in groups_last], [i[1] for i in groups_last]
+        value_id = telegram_manager.reconfigure_list_sublists(value_id)
+        value_name = telegram_manager.reconfigure_list_sublists(value_name)
+        if value_id and value_name and value_len > 1:
+            produce_groups_search_show(query.message, value_id, value_name, value_index, True, True, search)
         return
 
     if callback_sep_group_connect in data:

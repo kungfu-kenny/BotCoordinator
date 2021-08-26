@@ -53,6 +53,7 @@ callback_sep_group_next = "x"
 callback_sep_group_check = "c"
 callback_sep_search_next = "s"
 callback_sep_group_connect = "g"
+callback_sep_search_next_manual = "m"
 
 button_location_show = "Show 📍"
 button_groups_mine_del = '❌'
@@ -127,3 +128,4 @@ callback_check_group = 'check_group_val'
 callback_next_search = 'next_search_list'
 callback_group_connect = 'connect_group_user'
 callback_location_send = "location_send"
+callback_next_search_manually = "next_search_list_manual"
