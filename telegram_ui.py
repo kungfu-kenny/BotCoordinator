@@ -19,6 +19,7 @@ from config import (button_help,
                     button_location_send,
                     button_location_resend,
                     button_location_show,
+                    button_location_edit_name,
                     button_groups_recent,
                     button_groups_mine_del,
                     button_groups_mine_text,
@@ -45,6 +46,7 @@ from config import (button_help,
                     callback_next_loc,
                     callback_show_loc,
                     callback_delete_loc,
+                    callback_loc_edit_name,
                     callback_next_group,
                     callback_check_group,
                     callback_delete_group,
@@ -61,6 +63,7 @@ from config import (button_help,
                     callback_sep_group_upd,
                     callback_sep_group_next,
                     callback_sep_loc_send,
+                    callback_sep_loc_edit_name,
                     callback_sep_group_mine,
                     callback_sep_group_check,
                     callback_sep_group_search,
@@ -283,9 +286,11 @@ def produce_reply_locations(message:object, value_list:list, value_list_name:lis
         value_callback_show = telegram_manager.make_callback_values(callback_show_loc, message.chat.id, i)
         value_callback_del = telegram_manager.make_callback_values(callback_delete_loc, message.chat.id, i)
         value_callback_send = telegram_manager.make_callback_values(callback_location_send, message.chat.id, i)
+        value_callback_edit = telegram_manager.make_callback_values(callback_loc_edit_name, message.chat.id, i, value_index, len(value_list))
         keyboard_location_reply.row(InlineKeyboardButton(j, callback_data='1'),
                                 InlineKeyboardButton(button_location_send, callback_data=value_callback_send),
                                 InlineKeyboardButton(button_location_show, callback_data=value_callback_show),
+                                InlineKeyboardButton(button_location_edit_name, callback_data=value_callback_edit),
                                 InlineKeyboardButton(button_groups_mine_del, callback_data=value_callback_del))
     keyboard_location_reply.row(InlineKeyboardButton(button_groups_mine_prev, callback_data=value_index_prev), 
                             InlineKeyboardButton(button_loc_middle, callback_data='1'),
@@ -300,8 +305,10 @@ def produce_reply_locations_edit(message:object, value_list:list, value_list_nam
     for i, j in zip(value_list[value_index], value_list_name[value_index]):
         value_callback_show = telegram_manager.make_callback_values(callback_show_loc, message.chat.id, i)
         value_callback_del = telegram_manager.make_callback_values(callback_delete_loc, message.chat.id, i)
+        value_callback_edit = telegram_manager.make_callback_values(callback_loc_edit_name, message.chat.id, i, value_index, len(value_list))
         keyboard_location_reply_edit.row(InlineKeyboardButton(j, callback_data='1'),
                                 InlineKeyboardButton(button_location_show, callback_data=value_callback_show),
+                                InlineKeyboardButton(button_location_edit_name, callback_data=value_callback_edit),
                                 InlineKeyboardButton(button_groups_mine_del, callback_data=value_callback_del))
     keyboard_location_reply_edit.row(InlineKeyboardButton(button_groups_mine_prev, callback_data=value_index_prev), 
                             InlineKeyboardButton(button_loc_middle, callback_data='1'),
@@ -800,12 +807,35 @@ def calculate_answer_on_the_buttons(query):
         produce_location_show(value_id, value_list)
         return
 
+    if callback_sep_loc_edit_name in data:
+        value_id, value_loc_id, value_index, value_len = data.split(callback_sep_loc_edit_name)
+        value_id, value_loc_id, value_index, value_len = int(value_id), int(value_loc_id), int(value_index), int(value_len)
+        _, value_name, *_ = data_usage.get_user_coordinate(value_id, value_loc_id)
+        value_name_old = data_usage.return_user_name_settings(value_id)
+        if value_name_old == value_name:
+            bot.send_message(value_id, "Your location has the same name which it would change")
+        else:
+            value_coordinates, _, value_limits = data_usage.get_user_coordinates(value_id)
+            value_name_old = telegram_manager.produce_name_added(value_name_old, value_coordinates)
+            data_usage.get_update_coordinate_name(value_loc_id, value_name_old)
+            values_name, values_id, _ = data_usage.get_user_coordinates(value_id)
+            values_id = telegram_manager.reconfigure_list_sublists(values_id, value_limit_locations)
+            values_name = telegram_manager.reconfigure_list_sublists(values_name, value_limit_locations)
+            value_index = telegram_manager.check_index_inserted(value_index, value_len)
+            produce_reply_locations_edit(query.message, values_id, values_name, value_index)
+            bot.send_message(value_id, f"We successfully changed name of the location from {value_name} to {value_name_old}")
+        return
+
     if callback_sep_loc_del in data:
         value_id, value_loc_id = data.split(callback_sep_loc_del)
         value_id, value_loc_id = int(value_id), int(value_loc_id)
         value_list = data_usage.get_user_coordinate(value_id, value_loc_id)
         produce_location_delete(value_id, value_list)
         return
+
+@bot.poll_answer_handler(callback, pass_update_queue=True)
+def produce_update_poll():
+    pass
 
 @bot.message_handler(content_types=["text"])
 def send_test_message_check(message):
@@ -838,8 +868,15 @@ def send_test_message_check(message):
         produce_settings_show(user_list)
 
     if message.text == button_help:
-        bot.send_message(message.chat.id, 'Unfortunatelly we didn\'t produce this feature')
-        data_usage.check_db()
+        value_msg = f"`/{command_name_start}`: Niko, it's Roman let's go bowling\n\n" +\
+                    f"`/{command_edit_name_default}`: command for editing efault name for your location\n\n" +\
+                    f"`/{command_edit_message}`: command for editing message which you are going to send\n\n" +\
+                    f"`/{command_edit_time}`: command for editing number of minutes awy for the meeting\n\n" +\
+                    f"`/{command_search_group}`: command for manual search of the groups to add\n\n" +\
+                    f"`/{command_name_location_add}`: command for adding locations to the database of the profile"
+        bot.send_message(message.chat.id, value_msg)
+        #TODO add here documentation for the user
+        # data_usage.check_db()
 
     if message.text == button_groups:
         produce_groups(message)
@@ -854,11 +891,7 @@ def send_test_message_check(message):
             bot.send_message(message.chat.id, entrance_locations_absent)
 
     if message.text == button_support:
-        value_msg = bot.send_message(message.chat.id, 'Unfortunatelly we didn\'t produce this feature')
-
-@bot.poll_answer_handler(callback, pass_update_queue=True)
-def produce_update_poll():
-    pass
+        bot.send_message(message.chat.id, user_profiler.produce_message_for_sending(), parse_mode='Markdown')
 
 
 if __name__ == '__main__':

@@ -272,6 +272,20 @@ class DataUsage:
             self.proceed_error(msg)
             return []
 
+    def get_update_coordinate_name(self, id_location:int, name_new:str) -> None:
+        """
+        Method which is dedicated to update values
+        Input:  id_location = id of the location
+                name_new = new location name for it
+        Output: we updated coordinate name value
+        """
+        try:
+            self.cursor.execute(f"UPDATE {table_locations} SET name_location = ? WHERE id=?;", (name_new, id_location))
+            self.connection.commit()
+        except Exception as e:
+            msg = f"We found problems with updating name of the ; Mistake: {e}"
+            self.proceed_error(msg)
+
     def delete_location_user(self, id_chat:int, id_location:int) -> None:
         """
         Method which is dedicated to delete location from the

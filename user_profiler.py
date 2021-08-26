@@ -6,6 +6,7 @@ from config import (url_sound,
                     name_sound,
                     folder_config,
                     # chat_id_default,
+                    card_donations,
                     entrance_bot_img_name,
                     entrance_bot_img_link)
 
@@ -70,6 +71,16 @@ class UserProfiler:
             a = TelegramManager()
             a.proceed_message_values(f'We faced problem with the getting audio. Mistake: {e}')
             return ''
+
+    @staticmethod
+    def produce_message_for_sending() -> str:
+        """
+        Static method for getting values from
+        Input:  None
+        Output: we returning string for the getting the support button 
+        """
+        return f"You can donate your money here:\n`{card_donations}`"
+
 
 if __name__ == '__main__':
     a = UserProfiler()

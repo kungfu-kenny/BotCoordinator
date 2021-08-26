@@ -26,6 +26,7 @@ from config import (bot_key,
                     callback_delete_group,
                     callback_group_connect,
                     callback_location_send,
+                    callback_loc_edit_name,
                     callback_next_search_manually,
                     name_join_default,
                     value_limit_groups,
@@ -38,6 +39,7 @@ from config import (bot_key,
                     callback_sep_group_check,
                     callback_sep_search_next,
                     callback_sep_group_connect,
+                    callback_sep_loc_edit_name,
                     callback_sep_search_next_manual,
                     command_edit_time,
                     command_edit_message,
@@ -266,6 +268,9 @@ class TelegramManager:
         if value_type == callback_show_loc:
             sep = callback_sep_loc_show
             return f"{value_id}{sep}{value_index}"
+        if value_type == callback_loc_edit_name:
+            sep = callback_sep_loc_edit_name
+            return f"{value_id}{sep}{value_index}{sep}{value_len}{sep}{value_group}"
         if value_type == callback_check_group:
             sep = callback_sep_group_check
             return f"{value_id}{sep}{value_index}"
