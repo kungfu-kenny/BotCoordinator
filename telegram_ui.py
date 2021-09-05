@@ -697,7 +697,8 @@ def calculate_answer_on_the_buttons(query):
                 value_poll_id = value_poll.poll.id
                 values_id_sub = [[id, i, value_poll_id] for id, i in enumerate(values_id_sub)]
                 data_usage.produce_multiple_insertion_poll(values_id_sub, value_id, value_latitude, value_longitude)
-        else:
+        
+        elif len(values_id) == 1:
             value_loc = bot.send_location(values_id[0], value_latitude, value_longitude)
             try:
                 bot.reply_to(value_loc, produce_user_message(value_id), parse_mode='Markdown')
