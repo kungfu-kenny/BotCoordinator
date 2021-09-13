@@ -94,6 +94,7 @@ from config import (button_help,
 data_usage = DataUsage()
 user_profiler = UserProfiler()
 telegram_manager = TelegramManager()
+markup_test = telegram_manager.return_reply_keyboard()
 
 def callback(update) -> None:
     value_poll_id = update.poll_id
@@ -136,7 +137,7 @@ def additional_group_check(message) -> None:
                 data_usage.delete_user_group_values(message.from_user.id, message.chat.id)
                 data_usage.connect_user_group(message.chat.id, message.from_user.id)
                 msg = "We connected you and the group"
-                bot.send_message(message.from_user.id, msg, parse_mode='Markdown')
+                bot.send_message(message.from_user.id, msg, parse_mode='Markdown', reply_markup=markup_test)
 
     except Exception as e:
         msg = f"We faced problems with checking values to the values; Mistake: {e}"
@@ -167,21 +168,21 @@ def produce_location_show(value_user:int, value_list:list) -> None:
         bot.reply_to(value_loc, telegram_manager.produce_message_for_location(value_list), parse_mode='Markdown')
     else:
         msg = "Unfortunatelly, you have ***removed*** this location from the database"
-        bot.send_message(value_user, msg, parse_mode='Markdown')
+        bot.send_message(value_user, msg, parse_mode='Markdown', reply_markup=markup_test)
 
 def produce_location_delete(value_user:int, value_list:list) -> None:
     if value_list:
         value_id, value_name, *_ = value_list
         msg = f"We successfully deleted your coordinate with name: {value_name}"
-        bot.send_message(value_user, msg, disable_notification=False)
+        bot.send_message(value_user, msg, disable_notification=False, reply_markup=markup_test)
         data_usage.delete_location_user(value_user, value_id)
     else:
         msg = "You have already ***removed*** this location previously"
-        bot.send_message(value_user, msg, disable_notification=False, parse_mode='Markdown')
+        bot.send_message(value_user, msg, disable_notification=False, parse_mode='Markdown', reply_markup=markup_test)
 
 def make_deletion_check_group(id_user:int, id_group:int, send_message:bool=False) -> bool:
     """
-    Function which is dedicated to make the test of the deletion from the 
+    Function which is dedicated to make the test of the deletion from the group
     Input:  id_user = id value which we require to test
             id_group = group which is require to check
     Output: we check group that we can produce message
@@ -190,11 +191,11 @@ def make_deletion_check_group(id_user:int, id_group:int, send_message:bool=False
         new_message = bot.send_message(id_group, entrance_bot_check_group)
         bot.delete_message(id_group, new_message.id)
         if send_message:
-            bot.send_message(id_user, entrance_bot_check_true)
+            bot.send_message(id_user, entrance_bot_check_true, reply_markup=markup_test)
         return True
     except Exception as e:
         if send_message:
-            bot.send_message(id_user, entrance_bot_check_false)
+            bot.send_message(id_user, entrance_bot_check_false, reply_markup=markup_test)
         msg = f"We faced problems with the value; Mistake: {e}"
         bot.send_message(chat_id_default, msg)
         return False
@@ -265,8 +266,12 @@ def produce_settings_show(value_list:list, value_check:bool=False, message_id:in
     keyboard_user_settings.row(InlineKeyboardButton(button_groups_settings, callback_data=callback_settings_groups),
                                 InlineKeyboardButton(len_group, callback_data='1'))
     if not value_check:
+        # TODO check this phone
+        bot.send_message(user_id, 'Here you can change values of the settings', reply_markup=markup_test)
         bot.send_message(user_id, button_settings_mine_text, reply_markup=keyboard_user_settings)
     else:
+        # TODO check this phone
+        bot.send_message(user_id, 'Your settings were changed', reply_markup=markup_test)
         bot.edit_message_reply_markup(user_id, message_id, button_settings_mine_text, reply_markup=keyboard_user_settings)        
 
 def produce_groups(message):
@@ -296,6 +301,8 @@ def produce_reply_locations(message:object, value_list:list, value_list_name:lis
                             InlineKeyboardButton(button_loc_middle, callback_data='1'),
                             InlineKeyboardButton(button_groups_mine_next, callback_data=value_index_next))
     bot.send_message(message.chat.id, button_groups_mine_text, reply_markup=keyboard_location_reply)        
+    #TODO check this phone
+    bot.send_message(message.chat.id, 'Select what to do with it after', reply_markup=markup_test)        
 
 def produce_reply_locations_edit(message:object, value_list:list, value_list_name:list, value_index:int) -> None:
     keyboard_location_reply_edit = InlineKeyboardMarkup()
@@ -339,6 +346,8 @@ def produce_reply_groups(message:object, value_list:list, value_list_name:list, 
                             InlineKeyboardButton(button_group_middle, callback_data='1'),
                             InlineKeyboardButton(button_groups_mine_next, callback_data=value_index_next))
     bot.send_message(message.chat.id, button_groups_mine_text, reply_markup=keyboard_group_reply)
+    #TODO check this phone
+    bot.send_message(message.chat.id, 'Select what to do with groups', reply_markup=markup_test)
 
 def produce_reply_groups_edit(message:object, value_list:list, value_list_name:list, value_index:int) -> None:
     """
@@ -381,6 +390,8 @@ def check_coordinates(message):
     if data_usage.check_presence_locations(message.chat.id):
         keyboard_locations_choice.row(InlineKeyboardButton('Remove Location', callback_data=callback_sep_remloc))
     bot.reply_to(message, 'Select command what to do with a location:', reply_markup=keyboard_locations_choice)
+    #TODO check this phone
+    # bot.send_message(message.chat.id, 'Select what to do with it after', reply_markup=markup_test)
 
 @bot.message_handler(commands=[command_name_start])
 def start_messages(message):
@@ -392,7 +403,7 @@ def start_messages(message):
         return
     if not value_bool and not value_text:
         return
-    markup_test = telegram_manager.return_reply_keyboard()
+    # markup_test = telegram_manager.return_reply_keyboard()
     link_image = user_profiler.work_on_the_picture()
     value_audio = user_profiler.produce_music_start()
     if link_image:
@@ -413,18 +424,18 @@ def add_location_name(message):
     if not value_bool and not value_text:
         return
     if message.reply_to_message and message.reply_to_message.content_type != "location":
-        bot.reply_to(message, 'You have replied your message not to the location, please correct that mistake')
+        bot.reply_to(message, 'You have replied your message not to the location, please correct that mistake', reply_markup=markup_test)
         return
     elif not message.reply_to_message:
-        bot.reply_to(message, "You need to reply this message to youre coordinate which you have sent")
+        bot.reply_to(message, "You need to reply this message to youre coordinate which you have sent", reply_markup=markup_test)
         return    
     value_coordinates, _, value_limits = data_usage.get_user_coordinates(message.chat.id)
     if not value_limits:
-        bot.reply_to(message, "You have surpassed the limit of the values")
+        bot.reply_to(message, "You have surpassed the limit of the values", reply_markup=markup_test)
         return
     value_name, value_check = telegram_manager.manage_added_name(message.text)
     if not value_check:
-        bot.reply_to(message, "Unfortunatelly, you pressed the wrong values to this values")
+        bot.reply_to(message, "Unfortunatelly, you pressed the wrong values to this values", reply_markup=markup_test)
         return
     
     value_name = telegram_manager.produce_name_added(value_name, value_coordinates)
@@ -432,7 +443,7 @@ def add_location_name(message):
     value_longitude = message.reply_to_message.location.longitude
     data_usage.insert_location([message.from_user.id, message.from_user.username, message.from_user.first_name, 
                                 message.from_user.last_name], value_name, value_latitude, value_longitude)
-    bot.send_message(message.chat.id, f"We successfully added location with name:\n '{value_name}'")
+    bot.send_message(message.chat.id, f"We successfully added location with name:\n '{value_name}'", reply_markup=markup_test)
 
 @bot.message_handler(commands=[command_edit_message])
 def change_group_name(message):
@@ -447,7 +458,7 @@ def change_group_name(message):
     new_message, message_ok = telegram_manager.manage_updated_text(new_message)
     if message_ok and data_usage.update_text_message(message.chat.id, new_message):
         message_send = f"We have updated your message to send for the users to `{new_message}`"
-        bot.send_message(message.chat.id, message_send, parse_mode='Markdown')
+        bot.send_message(message.chat.id, message_send, parse_mode='Markdown', reply_markup=markup_test)
     return
 
 @bot.message_handler(commands=[command_edit_name_default])
@@ -463,7 +474,7 @@ def change_group_name(message):
     new_name, name_ok = telegram_manager.manage_updated_name_default(new_name)
     if name_ok and data_usage.update_name_default(message.chat.id, new_name):
         message_send = f"We have updated your default name for the coordinates to `{new_name}`"
-        bot.send_message(message.chat.id, message_send, parse_mode='Markdown')
+        bot.send_message(message.chat.id, message_send, parse_mode='Markdown', reply_markup=markup_test)
     return
 
 @bot.message_handler(commands=[command_edit_time])
@@ -479,11 +490,11 @@ def change_group_name(message):
     new_time, time_ok, time_int = telegram_manager.manage_updated_time(new_time)
     if not time_int:
         message_send = f"You didn't posted int value, you need to recontinue"
-        bot.send_message(message.chat.id, message_send, parse_mode='Markdown')
+        bot.send_message(message.chat.id, message_send, parse_mode='Markdown', reply_markup=markup_test)
         return
     if time_ok and data_usage.update_time_default(message.chat.id, new_time):
         message_send = f"We have updated your default time to `{new_time}`"
-        bot.send_message(message.chat.id, message_send, parse_mode='Markdown')
+        bot.send_message(message.chat.id, message_send, parse_mode='Markdown', reply_markup=markup_test)
     return
 
 @bot.message_handler(commands=[command_search_group])
@@ -507,9 +518,9 @@ def search_group(message):
             produce_groups_search_show(message, value_id, value_name, 0, 0, 1, text_search)
         else:
             msg = f"Unfortunally, we didn't found any groups which would match by search"
-            bot.send_message(message.chat.id, msg)
+            bot.send_message(message.chat.id, msg, reply_markup=markup_test)
     else:
-        bot.send_message(message.chat.id, 'To search values you need to insert this string')
+        bot.send_message(message.chat.id, 'To search values you need to insert this string', reply_markup=markup_test)
     return
 
 @bot.callback_query_handler(func=lambda call: True)
@@ -525,7 +536,7 @@ def calculate_answer_on_the_buttons(query):
         new_chat_name_user = query.message.chat.username
         data_usage.insert_location([new_chat_id, new_chat_name_user, new_chat_name_first, 
                                 new_chat_name_last], new_name, new_latitude, new_longitude)
-        bot.send_message(new_chat_id, f"We successfully added location with name:\n '{new_name}'")
+        bot.send_message(new_chat_id, f"We successfully added location with name:\n '{new_name}'", reply_markup=markup_test)
         return 
 
     if data == callback_sep_addloc and not query.message.reply_to_message.venue and query.message.reply_to_message.location:
@@ -541,17 +552,17 @@ def calculate_answer_on_the_buttons(query):
             message_print = "Unfortunatelly, u didn't added default name feature, so u need to type the name with a command: "+\
                             f"/{command_name_location_add}: <name which you have selected>\n" +\
                             "Also, u can just include the autoname injection"
-            bot.send_message(new_chat_id, message_print)
+            bot.send_message(new_chat_id, message_print, reply_markup=markup_test)
         else:
             new_name = data_usage.return_user_name_settings(new_chat_id)
             value_coordinates, _, value_limits = data_usage.get_user_coordinates(new_chat_id)
             if not value_limits:
-                bot.reply_to(query.message, "You have surpassed the limit of the values")
+                bot.reply_to(query.message, "You have surpassed the limit of the values", reply_markup=markup_test)
                 return
             new_name = telegram_manager.produce_name_added(new_name, value_coordinates)
             data_usage.insert_location([new_chat_id, new_chat_name_user, new_chat_name_first, 
                                     new_chat_name_last], new_name, new_latitude, new_longitude)
-            bot.send_message(new_chat_id, f"We successfully added location with name:\n '{new_name}'")
+            bot.send_message(new_chat_id, f"We successfully added location with name:\n '{new_name}'", reply_markup=markup_test)
         return
     
     if data == callback_sep_senloc:
@@ -577,9 +588,9 @@ def calculate_answer_on_the_buttons(query):
         else:
             value_loc = bot.send_location(values_id[0], value_latitude, value_longitude)
             try:
-                bot.reply_to(value_loc, produce_user_message(value_id), parse_mode='Markdown')
+                bot.reply_to(value_loc, produce_user_message(value_id), parse_mode='Markdown', reply_markup=markup_test)
             except:
-                bot.reply_to(value_loc, produce_user_message(value_id))
+                bot.reply_to(value_loc, produce_user_message(value_id), reply_markup=markup_test)
         return
 
     if data == callback_sep_remloc:
@@ -596,22 +607,22 @@ def calculate_answer_on_the_buttons(query):
         value_true, value_names = data_usage.remove_location_manually(value_list)
         if value_true and value_names:
             value_msg_second = "\n".join(value_names)
-            bot.send_message(value_id, f"We removed such locations as: \n{value_msg_second}")
+            bot.send_message(value_id, f"We removed such locations as: \n{value_msg_second}", reply_markup=markup_test)
         return
 
     if data == callback_settings_default_text_edit:
         msg = f'You need to write command like: `/{command_edit_message} "Your new message"` '
-        bot.send_message(query.message.chat.id, msg, parse_mode='Markdown')
+        bot.send_message(query.message.chat.id, msg, parse_mode='Markdown', reply_markup=markup_test)
         return
 
     if data == callback_settings_default_minute_edit:
         msg = f'You need to write command like: `/{command_edit_time} "Your new default time"` '
-        bot.send_message(query.message.chat.id, msg, parse_mode='Markdown')
+        bot.send_message(query.message.chat.id, msg, parse_mode='Markdown', reply_markup=markup_test)
         return
 
     if data == callback_settings_default_name_edit:
         msg = f'You need to write command like: `/{command_edit_name_default} "Your new default name"` '
-        bot.send_message(query.message.chat.id, msg, parse_mode='Markdown')
+        bot.send_message(query.message.chat.id, msg, parse_mode='Markdown', reply_markup=markup_test)
         return
 
     if data == callback_settings_update:
@@ -624,7 +635,7 @@ def calculate_answer_on_the_buttons(query):
             message_create = 'Now, you always need to add name for added location'
         else:
             message_create = "Now, you have automated adding location's name."
-        bot.send_message(user_id, f'We have changed default parameters of the name. {message_create}')
+        bot.send_message(user_id, f'We have changed default parameters of the name. {message_create}', reply_markup=markup_test)
         return
 
     if data in [callback_settings_groups, callback_sep_group_mine]:
@@ -635,7 +646,7 @@ def calculate_answer_on_the_buttons(query):
             value_name = telegram_manager.reconfigure_list_sublists(value_name)
             produce_reply_groups(query.message, value_id, value_name, 0)
         else:
-            bot.send_message(query.message.chat.id, entrance_groups_absent)
+            bot.send_message(query.message.chat.id, entrance_groups_absent, reply_markup=markup_test)
         return
 
     if data == callback_settings_locations:
@@ -647,22 +658,22 @@ def calculate_answer_on_the_buttons(query):
             if value_name and value_id:
                 produce_reply_locations(query.message, value_id, value_name, 0)
         else:
-            bot.send_message(query.message.chat.id, entrance_locations_absent)
+            bot.send_message(query.message.chat.id, entrance_locations_absent, reply_markup=markup_test)
         return
 
     if data == callback_settings_default_name:
         name_print = data_usage.return_user_name_settings(query.message.chat.id)
-        bot.send_message(query.message.chat.id, f"Your default name is: \n`{name_print}`", parse_mode='Markdown')
+        bot.send_message(query.message.chat.id, f"Your default name is: \n`{name_print}`", parse_mode='Markdown', reply_markup=markup_test)
         return
 
     if data == callback_settings_default_text:
         text_print = data_usage.return_user_text(query.message.chat.id)
-        bot.send_message(query.message.chat.id, f"Your default text is: \n`{text_print}`", parse_mode='Markdown')
+        bot.send_message(query.message.chat.id, f"Your default text is: \n`{text_print}`", parse_mode='Markdown', reply_markup=markup_test)
         return
     
     if data == callback_settings_default_minute:
         min_print = data_usage.return_user_minutes(query.message.chat.id)
-        bot.send_message(query.message.chat.id, f"Your default minute value is: \n`{min_print}`", parse_mode='Markdown')
+        bot.send_message(query.message.chat.id, f"Your default minute value is: \n`{min_print}`", parse_mode='Markdown', reply_markup=markup_test)
         return
     
     if data == callback_sep_group_search:
@@ -674,12 +685,12 @@ def calculate_answer_on_the_buttons(query):
             produce_groups_search_show(query.message, value_id, value_name, 0)
         else:
             msg = f"Unfortunally, list with groups for now is empty; Please add new groups"
-            bot.send_message(query.message.chat.id, msg)
+            bot.send_message(query.message.chat.id, msg, reply_markup=markup_test)
         return
 
     if data == callback_sep_group_search_manual:
         msg = f'For manual search, you need to perform command like:\n `/{command_search_group} "Your group"`'
-        bot.send_message(query.message.chat.id, msg, parse_mode='Markdown')
+        bot.send_message(query.message.chat.id, msg, parse_mode='Markdown', reply_markup=markup_test)
         return
 
     if callback_sep_loc_send in data:
@@ -701,9 +712,9 @@ def calculate_answer_on_the_buttons(query):
         elif len(values_id) == 1:
             value_loc = bot.send_location(values_id[0], value_latitude, value_longitude)
             try:
-                bot.reply_to(value_loc, produce_user_message(value_id), parse_mode='Markdown')
+                bot.reply_to(value_loc, produce_user_message(value_id), parse_mode='Markdown', reply_markup=markup_test)
             except:
-                bot.reply_to(value_loc, produce_user_message(value_id))
+                bot.reply_to(value_loc, produce_user_message(value_id), reply_markup=markup_test)
         return
 
     if callback_sep_search_next in data:
@@ -745,14 +756,14 @@ def calculate_answer_on_the_buttons(query):
         if check_non_finished:
             code_send = data_usage.return_inserted_message(id_user, id_group)
             message_print = f"Your code is: `{code_send}`. Please send this as message to the group which you want to connect"
-            bot.send_message(query.message.chat.id, message_print, parse_mode='Markdown')
+            bot.send_message(query.message.chat.id, message_print, parse_mode='Markdown', reply_markup=markup_test)
             message_group = f'Code to add: `{code_send}`'
             bot.send_message(id_group, message_group, parse_mode='Markdown')
             return
         code_send = telegram_manager.proceed_random_message()
         data_usage.produce_insert_group_user_connect(id_user, id_group, code_send)
         message_print = f"Your code is: `{code_send}`. Please send this as message to the group which you want to connect"
-        bot.send_message(query.message.chat.id, message_print, parse_mode='Markdown')
+        bot.send_message(query.message.chat.id, message_print, parse_mode='Markdown', reply_markup=markup_test)
         message_group = f'Code to add: `{code_send}`'
         bot.send_message(id_group, message_group, parse_mode='Markdown')
         return
@@ -769,7 +780,7 @@ def calculate_answer_on_the_buttons(query):
         check_working, check_further, check_nonremoved = data_usage.disconnect_user_group(value_id, value_group)
         if check_working:
             if not check_nonremoved:
-                bot.send_message(value_id, f"Group with id of `{value_group}` was previously removed; you need to check it", parse_mode='Markdown')
+                bot.send_message(value_id, f"Group with id of `{value_group}` was previously removed; you need to check it", parse_mode='Markdown', reply_markup=markup_test)
             if check_further:
                 value_check_usage = make_deletion_check_group(value_id, value_group)
                 if not value_check_usage:
@@ -814,7 +825,7 @@ def calculate_answer_on_the_buttons(query):
         _, value_name, *_ = data_usage.get_user_coordinate(value_id, value_loc_id)
         value_name_old = data_usage.return_user_name_settings(value_id)
         if value_name_old == value_name:
-            bot.send_message(value_id, "Your location has the same name which it would change")
+            bot.send_message(value_id, "Your location has the same name which it would change", reply_markup=markup_test)
         else:
             value_coordinates, _, value_limits = data_usage.get_user_coordinates(value_id)
             value_name_old = telegram_manager.produce_name_added(value_name_old, value_coordinates)
@@ -824,7 +835,7 @@ def calculate_answer_on_the_buttons(query):
             values_name = telegram_manager.reconfigure_list_sublists(values_name, value_limit_locations)
             value_index = telegram_manager.check_index_inserted(value_index, value_len)
             produce_reply_locations_edit(query.message, values_id, values_name, value_index)
-            bot.send_message(value_id, f"We successfully changed name of the location from {value_name} to {value_name_old}")
+            bot.send_message(value_id, f"We successfully changed name of the location from {value_name} to {value_name_old}", reply_markup=markup_test)
         return
 
     if callback_sep_loc_del in data:
@@ -856,9 +867,9 @@ def send_test_message_check(message):
                 make_lambda_check()
             value_list = [message.chat.first_name, message.chat.last_name, message.chat.username, message.chat.id]
             data_usage.update_user_information(value_list)
-            bot.send_message(message.chat.id, entrance_update_good)
+            bot.send_message(message.chat.id, entrance_update_good, reply_markup=markup_test)
         except Exception as e:
-            bot.send_message(message.chat.id, entrance_update_bad)
+            bot.send_message(message.chat.id, entrance_update_bad, reply_markup=markup_test)
             bot.send_message(chat_id_default, f'We faced problem with updating groups: {e}')
 
     if message.text == button_settings:
@@ -875,7 +886,7 @@ def send_test_message_check(message):
                     f"`/{command_edit_time}`: command for editing number of minutes awy for the meeting\n\n" +\
                     f"`/{command_search_group}`: command for manual search of the groups to add\n\n" +\
                     f"`/{command_name_location_add}`: command for adding locations to the database of the profile"
-        bot.send_message(message.chat.id, value_msg)
+        bot.send_message(message.chat.id, value_msg, reply_markup=markup_test)
         #TODO add here documentation for the user
         # data_usage.check_db()
 
@@ -889,10 +900,10 @@ def send_test_message_check(message):
         if value_name and value_id:
             produce_reply_locations(message, value_id, value_name, 0)
         else:
-            bot.send_message(message.chat.id, entrance_locations_absent)
+            bot.send_message(message.chat.id, entrance_locations_absent, reply_markup=markup_test)
 
     if message.text == button_support:
-        bot.send_message(message.chat.id, user_profiler.produce_message_for_sending(), parse_mode='Markdown')
+        bot.send_message(message.chat.id, user_profiler.produce_message_for_sending(), parse_mode='Markdown', reply_markup=markup_test)
 
 
 if __name__ == '__main__':

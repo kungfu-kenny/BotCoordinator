@@ -86,7 +86,7 @@ class TelegramManager:
 
     @staticmethod
     def return_reply_keyboard():
-        markup_test = ReplyKeyboardMarkup(True, True, row_width=1)
+        markup_test = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True, row_width=1)
         markup_test.row(button_locations, button_groups)
         markup_test.row(button_update, button_settings, button_help)
         markup_test.row(button_support)
