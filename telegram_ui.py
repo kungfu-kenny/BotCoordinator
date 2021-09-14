@@ -143,19 +143,26 @@ def additional_group_check(message) -> None:
         msg = f"We faced problems with checking values to the values; Mistake: {e}"
         bot.send_message(chat_id_default, msg)
 
-def produce_user_message(chat_id:int) -> str:
-    _, user_text, user_minutes, *_ = data_usage.return_user_settings(chat_id)
-    value_date = datetime.now() + timedelta(minutes=user_minutes)
-    value_time = f'`{value_date.strftime("%Y-%m-%d %H:%M")}`'
-    user_values = data_usage.return_user_values(chat_id)
+def produce_user_name(chat_id, user_values:set=[]) -> str:
+    if not user_values:
+        user_values = data_usage.return_user_values(chat_id)
     bool_add_name = bool(user_values)
-    value_post = ''
+    value_post = 'Getting your name'
     if bool_add_name:
         name, surname, username = user_values
         if username:
             value_post = f"@{username}"
         elif not username and (name or surname):
             value_post = f"{name} {surname}".strip()
+    return value_post
+
+def produce_user_message(chat_id:int) -> str:
+    _, user_text, user_minutes, *_ = data_usage.return_user_settings(chat_id)
+    value_date = datetime.now() + timedelta(minutes=user_minutes)
+    value_time = f'`{value_date.strftime("%Y-%m-%d %H:%M")}`'
+    user_values = data_usage.return_user_values(chat_id)
+    value_post = produce_user_name(chat_id, user_values)
+    if value_post != 'Getting your name':
         value_list = [user_text, value_time, value_post]
     else:
         value_list = [user_text, value_time]
@@ -267,22 +274,26 @@ def produce_settings_show(value_list:list, value_check:bool=False, message_id:in
                                 InlineKeyboardButton(len_group, callback_data='1'))
     if not value_check:
         # TODO check this phone
-        bot.send_message(user_id, 'Here you can change values of the settings', reply_markup=markup_test)
-        bot.send_message(user_id, button_settings_mine_text, reply_markup=keyboard_user_settings)
+        bot.send_message(user_id, button_settings_mine_text, reply_markup=markup_test)
+        bot.send_message(user_id, produce_user_name(user_id), reply_markup=keyboard_user_settings)
     else:
         # TODO check this phone
-        bot.send_message(user_id, 'Your settings were changed', reply_markup=markup_test)
+        # bot.send_message(user_id, 'Your settings were changed', reply_markup=markup_test)
         bot.edit_message_reply_markup(user_id, message_id, button_settings_mine_text, reply_markup=keyboard_user_settings)        
 
 def produce_groups(message):
+    options = 2
     keyboard_group_choice = InlineKeyboardMarkup()
     keyboard_group_choice.row(InlineKeyboardButton(button_group_search, callback_data=callback_sep_group_search))
     keyboard_group_choice.row(InlineKeyboardButton(button_group_search_manually, callback_data=callback_sep_group_search_manual))
     if data_usage.check_presence_groups(message.chat.id):
+        options = 3
         keyboard_group_choice.row(InlineKeyboardButton(button_group_mine, callback_data=callback_sep_group_mine))
-    bot.reply_to(message, entrance_groups_list, reply_markup=keyboard_group_choice)
+    # TODO check this phone
+    bot.send_message(message.chat.id, entrance_groups_list, reply_markup=markup_test)
+    bot.reply_to(message, f'You can select {options} options:', reply_markup=keyboard_group_choice)
 
-def produce_reply_locations(message:object, value_list:list, value_list_name:list, value_index:int) -> None:
+def produce_reply_locations(message:object, value_list:list, value_list_name:list, value_index:int, value_edit:bool=False) -> None:
     keyboard_location_reply = InlineKeyboardMarkup()
     value_index_next = telegram_manager.make_callback_values(callback_next_loc, message.chat.id, value_index+1, len(value_list))
     value_index_prev = telegram_manager.make_callback_values(callback_next_loc, message.chat.id, value_index-1, len(value_list))
@@ -300,10 +311,14 @@ def produce_reply_locations(message:object, value_list:list, value_list_name:lis
     keyboard_location_reply.row(InlineKeyboardButton(button_groups_mine_prev, callback_data=value_index_prev), 
                             InlineKeyboardButton(button_loc_middle, callback_data='1'),
                             InlineKeyboardButton(button_groups_mine_next, callback_data=value_index_next))
-    bot.send_message(message.chat.id, button_groups_mine_text, reply_markup=keyboard_location_reply)        
-    #TODO check this phone
-    bot.send_message(message.chat.id, 'Select what to do with it after', reply_markup=markup_test)        
+    if not value_edit:
+        bot.send_message(message.chat.id, button_groups_mine_text, reply_markup=keyboard_location_reply)        
+        #TODO check this phone
+        bot.send_message(message.chat.id, 'Select what to do with it after', reply_markup=markup_test)
+    else:
+        bot.edit_message_reply_markup(message.chat.id, message.id, button_groups_mine_text, reply_markup=keyboard_location_reply)
 
+#TODO check & remove
 def produce_reply_locations_edit(message:object, value_list:list, value_list_name:list, value_index:int) -> None:
     keyboard_location_reply_edit = InlineKeyboardMarkup()
     value_index_next = telegram_manager.make_callback_values(callback_next_loc, message.chat.id, value_index+1, len(value_list))
@@ -322,13 +337,14 @@ def produce_reply_locations_edit(message:object, value_list:list, value_list_nam
                             InlineKeyboardButton(button_groups_mine_next, callback_data=value_index_next))
     bot.edit_message_reply_markup(message.chat.id, message.id, button_groups_mine_text, reply_markup=keyboard_location_reply_edit)
 
-def produce_reply_groups(message:object, value_list:list, value_list_name:list, value_index:int) -> None:
+def produce_reply_groups(message:object, value_list:list, value_list_name:list, value_index:int, value_edit:bool=False) -> None:
     """
     Function test which is dedicated to make the list of selected by users groups
     Input:  message = selected message which is dedicated 
             value_list = list of lists with the groups id
             value_list_name = list of lists with the group name 
             value_index = index of this list which is sent to the values
+            value_edit = booelan which is dedicated to edit values
     Output: sent input keyboard with this values
     """
     value_index_next = telegram_manager.make_callback_values(callback_next_group, message.chat.id, value_index+1, len(value_list))
@@ -345,10 +361,14 @@ def produce_reply_groups(message:object, value_list:list, value_list_name:list, 
     keyboard_group_reply.row(InlineKeyboardButton(button_groups_mine_prev, callback_data=value_index_prev), 
                             InlineKeyboardButton(button_group_middle, callback_data='1'),
                             InlineKeyboardButton(button_groups_mine_next, callback_data=value_index_next))
-    bot.send_message(message.chat.id, button_groups_mine_text, reply_markup=keyboard_group_reply)
-    #TODO check this phone
-    bot.send_message(message.chat.id, 'Select what to do with groups', reply_markup=markup_test)
+    if not value_edit:
+        bot.send_message(message.chat.id, button_groups_mine_text, reply_markup=keyboard_group_reply)
+        #TODO check this phone
+        bot.send_message(message.chat.id, 'Select what to do with groups', reply_markup=markup_test)
+    else:
+        bot.edit_message_reply_markup(message.chat.id, message.id, button_groups_mine_text, reply_markup=keyboard_group_reply)
 
+#TODO check & remove
 def produce_reply_groups_edit(message:object, value_list:list, value_list_name:list, value_index:int) -> None:
     """
     Function which is dedicated to make edit of the reply groups and 
@@ -798,7 +818,8 @@ def calculate_answer_on_the_buttons(query):
         values_name = telegram_manager.reconfigure_list_sublists(values_name)
         value_index = telegram_manager.check_index_inserted(value_index, value_len)
         if value_len > 1:
-            produce_reply_groups_edit(query.message, values_id, values_name, value_index)
+            #TODO check & remove
+            produce_reply_groups(query.message, values_id, values_name, value_index, True)
         return
 
     if callback_sep_loc_next in data:
@@ -809,7 +830,8 @@ def calculate_answer_on_the_buttons(query):
         values_name = telegram_manager.reconfigure_list_sublists(values_name, value_limit_locations)
         value_index = telegram_manager.check_index_inserted(value_index, value_len)
         if value_len > 1:
-            produce_reply_locations_edit(query.message, values_id, values_name, value_index)
+            #TODO check & remove
+            produce_reply_locations(query.message, values_id, values_name, value_index, True)
         return
 
     if callback_sep_loc_show in data:
@@ -834,7 +856,8 @@ def calculate_answer_on_the_buttons(query):
             values_id = telegram_manager.reconfigure_list_sublists(values_id, value_limit_locations)
             values_name = telegram_manager.reconfigure_list_sublists(values_name, value_limit_locations)
             value_index = telegram_manager.check_index_inserted(value_index, value_len)
-            produce_reply_locations_edit(query.message, values_id, values_name, value_index)
+            #TODO check & remove
+            produce_reply_locations(query.message, values_id, values_name, value_index, True)
             bot.send_message(value_id, f"We successfully changed name of the location from {value_name} to {value_name_old}", reply_markup=markup_test)
         return
 
@@ -881,7 +904,7 @@ def send_test_message_check(message):
 
     if message.text == button_help:
         value_msg = f"`/{command_name_start}`: Niko, it's Roman let's go bowling\n\n" +\
-                    f"`/{command_edit_name_default}`: command for editing efault name for your location\n\n" +\
+                    f"`/{command_edit_name_default}`: command for editing default name for your location\n\n" +\
                     f"`/{command_edit_message}`: command for editing message which you are going to send\n\n" +\
                     f"`/{command_edit_time}`: command for editing number of minutes awy for the meeting\n\n" +\
                     f"`/{command_search_group}`: command for manual search of the groups to add\n\n" +\
