@@ -33,6 +33,7 @@ from config import (button_help,
                     button_group_search_manually,
                     button_settings_name_default,
                     chat_id_default,
+                    name_loc_default,
                     name_join_default,
                     entrance_groups_list,
                     entrance_bot_usage,
@@ -87,8 +88,8 @@ from config import (button_help,
                     command_edit_message,
                     command_search_group,
                     command_edit_name_default,
-                    command_name_location_add,
-                    command_name_location_edit)
+                    command_name_location_add)#,
+                    # command_name_location_edit)
 
     
 data_usage = DataUsage()
@@ -147,22 +148,22 @@ def produce_user_name(chat_id, user_values:set=[]) -> str:
     if not user_values:
         user_values = data_usage.return_user_values(chat_id)
     bool_add_name = bool(user_values)
-    value_post = 'Getting your name'
+    value_post = name_loc_default
     if bool_add_name:
         name, surname, username = user_values
         if username:
             value_post = f"@{username}"
         elif not username and (name or surname):
             value_post = f"{name} {surname}".strip()
-    return value_post
+    return value_post, bool_add_name
 
 def produce_user_message(chat_id:int) -> str:
     _, user_text, user_minutes, *_ = data_usage.return_user_settings(chat_id)
     value_date = datetime.now() + timedelta(minutes=user_minutes)
     value_time = f'`{value_date.strftime("%Y-%m-%d %H:%M")}`'
     user_values = data_usage.return_user_values(chat_id)
-    value_post = produce_user_name(chat_id, user_values)
-    if value_post != 'Getting your name':
+    value_post, value_bool = produce_user_name(chat_id, user_values)
+    if value_bool:
         value_list = [user_text, value_time, value_post]
     else:
         value_list = [user_text, value_time]
@@ -275,7 +276,7 @@ def produce_settings_show(value_list:list, value_check:bool=False, message_id:in
     if not value_check:
         # TODO check this phone
         bot.send_message(user_id, button_settings_mine_text, reply_markup=markup_test)
-        bot.send_message(user_id, produce_user_name(user_id), reply_markup=keyboard_user_settings)
+        bot.send_message(user_id, produce_user_name(user_id)[0], reply_markup=keyboard_user_settings)
     else:
         # TODO check this phone
         # bot.send_message(user_id, 'Your settings were changed', reply_markup=markup_test)

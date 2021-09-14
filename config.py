@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 bot_key = os.getenv('BOT_KEY')
-separator = '96ba108c-e5ea-4aeb-bd51-5da39b758192-9ba2af35-8981-41f4-980f-13bbf18fcdfb'
+# separator = '96ba108c-e5ea-4aeb-bd51-5da39b758192-9ba2af35-8981-41f4-980f-13bbf18fcdfb'
 chat_id_default = os.getenv('CHAT_ID_DEFAULT')
 url_sound = os.getenv('URL_SOUND')
 card_donations = os.getenv('CARD_DONATIONS')
