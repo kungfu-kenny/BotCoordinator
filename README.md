@@ -18,7 +18,7 @@
     <li>Create envinronment .env file in folder</li>
     <li>Fullfill .env file like its written on .env-example file</li>
     <li>Launch bot: python telegram_ui.py</li>
-<ol>
+</ol>
 <h3>Linux</h3>
 <ol>
     <li>Install Python 3. Program were written on Python 3.8.10. Also, it was working on Python 3.6.9</li>
