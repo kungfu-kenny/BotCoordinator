@@ -1,7 +1,7 @@
 <h1>Bot Operator</h1>
 <h2>Description</h2>
 <p>
-    This is telegram bot which is dedicated to work with the telegram of resending values for the meeting on the selected values.<br>
+    This is telegram bot which is dedicated to work with the telegram of resending values for the meeting on the selected values. 
     It uses MySQL for storing values about the client and stores it's used coordinates and info about groups; user.
 </p>
 <h2>Usage</h2>
