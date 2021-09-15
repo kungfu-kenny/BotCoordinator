@@ -28,5 +28,5 @@
     <li>Create envinronment .env file in folder</li>
     <li>Fullfill .env file like its written on .env-example file</li>
     <li>Launch bot: python telegram_ui.py</li>
-<ol>
+</ol>
 <h2>Niko, let's go bowling</h2>
